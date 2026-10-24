@@ -785,12 +785,39 @@ try {
 			);
 			await page.locator('main a[href*="/posts/reading-notes/"]').waitFor();
 			assert.equal(await page.locator('main a[href*="/posts/"]').count(), 1);
+			const expectedAbout = await page.evaluate(
+				(html) => {
+					const document = new DOMParser().parseFromString(html, "text/html");
+					const bodies = document.querySelectorAll("main [data-pagefind-body]");
+					return bodies.length === 1
+						? (bodies[0].textContent || "").replace(/\s+/g, " ").trim()
+						: "";
+				},
+				readFileSync(path.join(directory, "about/index.html"), "utf8"),
+			);
+			assert(
+				expectedAbout.length > 0,
+				"Built about page has a nonempty Markdown body",
+			);
 			await navigateWithoutPageMotion(
 				page,
 				page.locator(`#navbar a[href="${base}about/"]`).first(),
 				`${origin}${base}about/`,
 			);
-			assert.match(await page.locator("main").innerText(), /블로그 주인/);
+			const aboutBody = page.locator("main [data-pagefind-body]");
+			assert.equal(
+				await aboutBody.count(),
+				1,
+				"About page has one Markdown body",
+			);
+			assert(await aboutBody.isVisible(), "About body is visible");
+			const actualAbout = ((await aboutBody.textContent()) || "")
+				.replace(/\s+/g, " ")
+				.trim();
+			assert(
+				actualAbout === expectedAbout,
+				"About body matches the built content",
+			);
 			if (base !== "/") {
 				await page.goto(`${origin}${base}`, { waitUntil: "networkidle" });
 				await page.evaluate(() => {
