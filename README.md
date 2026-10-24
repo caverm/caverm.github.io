@@ -85,7 +85,7 @@ lang: ko
 
 ## Pages CMS로 글과 분류 편집하기
 
-루트 `.pages.yml`은 [Pages CMS](https://app.pagescms.org/) 연결을 위한 생성 설정입니다. 현재 GitHub 저장소가 없어 App 연결·실제 글 CRUD·이미지 업로드·원격 Actions·게시를 실행하지 않았습니다. 아래 절차는 저장소를 만든 뒤 진행합니다. 로컬 준비의 계약과 검사 기록은 [specs/pages-cms](specs/pages-cms/)에 있습니다.
+루트 `.pages.yml`은 [Pages CMS](https://app.pagescms.org/) 연결을 위한 생성 설정입니다. 초기 준비 당시에는 GitHub 저장소가 없었고, 현재 저장소와 CI 실행은 확인했습니다. hosted CMS의 App 연결·실제 글 CRUD·이미지 업로드는 이번 수정에서 검증하지 않았습니다. 로컬 준비의 계약과 검사 기록은 [specs/pages-cms](specs/pages-cms/)에 있습니다.
 
 1. 소스를 GitHub 저장소의 `main`에 올리고 아래 Pages 설정을 완료합니다. 공개 저장소에는 초안 원문도 공개되므로 민감한 내용을 저장하지 않습니다.
 2. Pages CMS에 GitHub로 로그인하고 관리자가 Pages CMS GitHub App을 **사용할 저장소에만** 설치·승인합니다. 저장소와 `main`을 선택합니다. 글·분류·이미지 저장과 action에 필요한 권한은 서비스가 요청하는 내용을 확인합니다. 개인 토큰을 소스나 `.pages.yml`에 넣지 않습니다.
@@ -120,11 +120,11 @@ Astro 개발 도구 막대는 `astro.config.mjs`의 `devToolbar.enabled: false`�
 
 `pnpm verify`는 필수 단계가 실패하거나 도구가 없으면 실패 코드로 종료합니다. Node 기본 테스트 러너로 분류/발행/URL 로직을 검증하고 컨테이너 Chromium으로 두 base의 키보드 disclosure, Swup 이동·뒤로가기, 검색, 코드 복사, 테마, 모바일을 확인합니다. 스크린샷은 `artifacts/screenshots/`에 저장합니다. 의존성 감사는 알려진 잔여 위험과 새 취약점을 구분해 출력하며 상세 정책은 [보안 명세](docs/security-spec.md)를 참조하세요.
 
-2026-10-24 최신 전체 검증은 새 의존성 advisory2건으로 실패했습니다. 개별 기능 검사 통과와 전체 검증·게시 조건은 구분합니다. 현재 감사 상태는 [보안 명세](docs/security-spec.md), 실행별 결과는 [작업 기록](specs/personal-blog/tasks.md)에 남깁니다.
+2026-10-24 후속 수정의 로컬 Docker 전체 검증은 통과했습니다(`28a41897-5d80-46fb-9648-458a36f89ede`, exit0). 이전 advisory2건 실패와 보완 이력은 보존합니다. 원시 감사에는 알려진 잔여 위험15건이 남으며 무취약 상태는 아닙니다. 원격 CI 재실행·커밋·push·게시는 수행하지 않았습니다. 이후 Git 검증과 반영은 사용자가 진행합니다. 현재 감사 상태는 [보안 명세](docs/security-spec.md), 실행별 결과는 [작업 기록](specs/personal-blog/tasks.md)에 남깁니다.
 
 페이지·카테고리·글·페이지번호 이동은 본문 fade/slide나 순차 등장 없이 교체합니다. 아래쪽 태그·카테고리 같은 내부 링크를 누르면 목적지 응답을 준비한 뒤 기존 화면이 부드럽게 위로 올라가고 상단에서 내용을 교체합니다. 이미 상단이거나 모션 줄이기 설정이면 즉시 이동하며 history 위치 복원과 목차 hash에는 별도 상향 애니메이션을 넣지 않습니다. 메뉴·분류 펼침·호버·복사·테마 피드백은 유지합니다. 브라우저 검사는 지연 응답·교체 첫 프레임과 실제 하단 링크의 중간 스크롤 좌표, reduced-motion·연속 탐색·키보드·목차·현재 분류를 함께 확인합니다.
 
-GitHub Actions는 Docker Compose에서 같은 검증을 실행하고 저장소 이름에 맞는 base로 `dist/`를 다시 빌드해 Pages artifact를 업로드합니다. 수동 실행에서 게시를 선택하면 검증 완료 산출물을 deploy-pages로 게시할 수 있습니다. 현재 작업에서는 게시 job을 실행하지 않았습니다. 저장소 생성·push·브랜치 보호·필수 상태 검사·Pages 설정·배포는 수행하지 않았습니다. 현재 Git 저장소와 설치된 Git hook도 없으며 CI 파일 존재를 서버의 보호 설정 적용으로 간주하지 않습니다.
+GitHub Actions는 Docker Compose에서 같은 검증을 실행하고 저장소 이름에 맞는 base로 `dist/`를 다시 빌드해 Pages artifact를 업로드합니다. 수동 실행에서 게시를 선택하면 검증 완료 산출물을 deploy-pages로 게시할 수 있습니다. 현재 작업에서는 게시 job을 실행하지 않았습니다. 저장소 생성·push·브랜치 보호·필수 상태 검사·Pages 설정·배포는 수행하지 않았습니다. 초기 작업 당시에는 Git 저장소가 없었습니다. 현재 사용자가 로컬 Git 저장소와 GitHub 원격을 설정했고 CI 실행도 확인했습니다. 이번 수정에서는 커밋·push·원격 CI 재실행·배포를 수행하지 않습니다. CI 파일 존재를 서버의 보호 설정 적용으로 간주하지 않습니다.
 
 첫 프레임 검사는 교체 영역의 CSS 가시성을 확인합니다. 기존 클라이언트 전용 아카이브는 모듈을 처음 불러올 때 글 목록 렌더가 늦을 수 있으며, 실제 본문이 항상 교체 첫 프레임에 표시된다는 보장은 확인하지 못했습니다. 관찰 근거와 범위는 [작업 기록](specs/personal-blog/tasks.md)을 참조하세요.
 

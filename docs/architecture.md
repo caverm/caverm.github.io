@@ -41,6 +41,12 @@ flowchart LR
 
 기존 아카이브는 `ArchivePanel`을 `client:only="svelte"`로 렌더하고 클라이언트 초기화에서 태그를 처리한다. 모듈을 처음 불러올 때 교체 후 실제 글 목록 렌더가 늦어 잠시 빈 main이 나타날 수 있다. 전환 검사의 첫 프레임 opacity/transform 확인은 교체 container의 CSS 가시성만 입증하며 client-only 콘텐츠의 첫 렌더 완료를 보장하지 않는다. 이 제약은 READ-04 viewport 스크롤 수정과 별개로 남아 있고, SSR/태그 route 변경은 구현하지 않았다.
 
+글 컬렉션은 `src/utils/tags-schema.ts`의 공용 tags 스키마를 사용한다. Astro5의 Zod3는 유지하되 초과 태그 배열을 preprocess에서 원소 파싱 전에 중단한다. source preflight는 텍스트 파일을 읽기 전 용량을 확인하고 check/dev/build/verify와 독립 감사에서 실행한다. 감사의 별도 입력 경계 guard는 실제 스키마 probe, 승인된 스키마 연결·입력 경로와 검사 배선을 검증한다. 구체적인 한도·거부 조건과 Zod 미패치/YAML·도구 내부 경로 등의 한계는 security-spec의 SEC-CONTENT-02가 기준이다. serialize-javascript는7.1.3 패치를 고정한다. 원시 감사 보고서와 정책 pending/failed/passed 상태는 분리 저장한다.
+
+모바일 PostCard cover는 기존20vh 상한과 같은 높이를 미리 예약한다. public 이미지의 intrinsic 크기가 늦게 준비되면 높이0→200px이 되면서 복원된 y1162가1362로 이동하는 실제 경쟁을 확인했다. `h-[20vh] md:h-auto`로 모바일 공간만 예약하고 데스크톱 absolute 배치를 유지한다. 이미지 미완료·완료 시점 모두 원래 history 좌표를 유지하는 응답 gate 회귀로 검증한다.
+
+Profile의 avatar anchor도 aspect-square로 기존 정사각 공간을 예약한다. 이미지 완료 전 높이0이면 모바일 전체 최대 스크롤이168px 줄어 y1943 복원이1775로 제한되고, 이미지 완료 후에도 복원이 회복되지 않는 별도 원인을 확인했다. cover와 avatar 응답을 함께 보류한 상태와 완료 후를 모두 검사하며 임의 좌표 보정이나 전역 scroll anchoring 해제는 하지 않는다.
+
 ## Pages CMS 편집 흐름과 결정
 
 `src/data/categories.json`의 top-level 배열이 분류의 유일한 기준이다. Pages CMS reference는 collection의 개별 파일을 참조하므로 배열 행을 참조할 수 없다. `scripts/lib/cms.mjs`는 기존 taxonomy 검증을 재사용해 안정적인 ID/전체 조상 경로를 static select로 생성하고 `scripts/cms-config.mjs`가 `.pages.yml`을 기록/검사한다. JSON 표기법의 유효한 YAML로 직렬화하며 `--check`는 결정적 출력의 차이를 실패시킨다. 파일을 분리해 분류를 이중 관리하지 않는다.

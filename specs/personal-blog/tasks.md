@@ -2,12 +2,39 @@
 
 기준 요구사항은 spec.md, 구현 방법은 plan.md를 참조한다. 2026-10-23 시작.
 
+## 후속 수정: GitHub verify 감사 실패 (2026-10-24)
+
+개발 환경 복원(2026-10-25): `docker compose up -d blog` exit0, 서비스 Up과 `127.0.0.1:4321→4321` 바인딩을 확인했다. 로그에서 Astro5.18.2 ready(3069ms)와 파일 감시 시작을 확인했다. 사용자 요청대로 재개 후 Git 명령·추가 테스트/probe는 실행하지 않았다.
+
+- [x] A01: 실제 GitHub run40056990383/job120762039360 로그와 로컬 상태를 대조하고 공식 수정·설치 의존 경로를 확인한다.
+- [x] A02: Astra 설계 gate 후 serialize 패치와 실제 tags/소스 입력 완화·감사 guard를 구현한다.
+- [x] A03: 실제 공용 스키마의 원소 접근0/경계·기본값과 guard 제거·새 입력 경로·확장자·사전 검사 순서 회귀를 확인한다.
+- [x] A04: frozen 설치·전체 Docker verify·원시 잔여 감사 결과를 기록하고 Astra 최종 검토·개발 서버 복원을 마친다.
+
+최종 결과: 전체 Docker verify `28a41897-5d80-46fb-9648-458a36f89ede`는 **exit0**(182.747초)이었다(`artifacts/ci-audit-verify-confirmed.log`). 선행 입력 검사/lint99/CMS/check63파일 오류·경고·hint0/단위18/source108/세 base 각각34페이지·2620참조/양 base 브라우저 회귀를 통과했다. 실제 이미지 응답 gate의 미완료·완료 시점 공간/원좌표 검사도 통과했고, 수정 후 독립 시계열은 `artifacts/restore-images-after.json`과 로그에 보존했다. 감사 정책은 known15·unknown0 PASS지만 원시 audit는 exit1(low4/moderate8/high3/critical1)이며 Zod3 자체는 미패치 상태다. Astra는 최종 코드·전체 실행·최신5장 화면을 직접 대조해 **APPROVED**했다. 이전 실패 기록은 아래에 그대로 남긴다. 2026-10-25 재개 시 추가 검사/probe/Git 명령 없이 최소 문서 정리와 개발 서버 일반 시작만 수행한다. 원격 CI 재실행·커밋·push·배포는 하지 않았다.
+
+재현과 범위: 실제 CI 로그 `artifacts/ci-failure-40056990383.log`는 lint/CMS/check62파일 오류0/단위13/source107 PASS 후 audit known14·unknown2에서 exit1을 보였다. 원격 실행 commit76af7ee와 현재 로컬 HEAD f84739b는 달랐고 작업 시작 Git 상태는 clean이었다. 현재 저장소와 이전 스크롤·문서를 보존했고 reset·Git index·원격 변경은 하지 않았다. Docker Linux29.6.1이 정상이며 개발 서비스는 시작 시 Exited(1)로 활성 개발/빌드 충돌은 없었다.
+
+공식 조사: serialize-javascript GHSA의 패치7.1.3/Node>=20은 현재 Node22와 호환된다. Docker pnpm view/why로 Zod3 최종3.25.76과 Astro5의 실제 의존성, RSS/sitemap의4.6.7을 확인했다(`artifacts/zod-v3-versions.json`). upstream6653에서 v3 신규 배포가 없고 `.max()`로도 원소 파싱을 계속함을 확인했다. Astra 조건부 gate에 따라 Zod3 자체는 유지하고 실제 입력을 제한한다. 무근거 예외나 severity 변경이 아니다.
+
+구현과 초기 검증: Docker install은 exit0이며 lock diff는 serialize7.0.5→7.1.3의 override·해시·의존 참조만 바뀌었다(`artifacts/ci-audit-install.log`). 공용 tags schema는63/64개를 보존하고65개·백만 길이 sparse 배열을 원소 getter0회/단일 fatal 오류로 거부했다. 기본값·기존 invalid 값·1MiB 대소문자·이미지 제외·실제 사전 검사 실패 순서·guard 제거/새 collection/import/remote loader/SSR/배선 변경·mts/cts/cjs/MTS 실제 읽기 회귀를 포함해18개 PASS였다(`artifacts/ci-audit-guard-final.log`). check63파일 오류·경고·hint0도 PASS였다(`artifacts/ci-audit-focused-final.log`). audit는 known15·unknown0, 원시 exit1(low4/moderate8/high3/critical1)이었다. 최종 전체 실행은 아래에 별도 기록한다.
+
+검토 보완: Astra가 발견한 audit 소스 확장자 읽기 불일치를 공용 readAuditSources로 수정하고 실제 파일 기반 회귀를 추가했다. 원시 감사는 guard 전에 저장하고 요약의 pending/failed/passed와 실패 원인을 남긴다. audit exit2 같은 실행 오류도 passed 기록 전에 실패시킨다. Zod 분류는 Astro/static·신뢰 작성자·실제 tags 경계와 guard에 한정한다는 Astra 설계 검토를 받았으며 라이브러리 자체 패치나 모든 파싱 경로 보호라고 주장하지 않는다.
+
+전체 검증 첫 실행 `2f20f10b-cf95-4246-97f0-4d1f7ee8ca4e`는 frozen 설치/선행 입력 검사/lint99/CMS/check63파일 오류·경고·hint0/단위18/source108/audit known15·unknown0/세 base 각34페이지·2620참조를 통과했지만 브라우저의 모바일 카테고리 뒤로가기에서 exit1이었다(`artifacts/ci-audit-verify.log`,191.5초). 루트 브라우저 전체는 통과했고 `/blog/`에서 기존 복원 좌표 검사가 timeout이었다. 같은 빌드의 진단 재실행도 루트에서 expected1162/actual1362·height2943·viewport1000·manual·navigatingfalse로 실패했다(`artifacts/ci-browser-diagnostic.log`). 브라우저 예외·실패 요청은0이었다. 허용 오차를 늘리거나 재시도로 성공 처리하지 않았다.
+
+동일 원인 두 실패 뒤 가정을 재평가했다. 기존 모바일 PostCard cover는 max-height20vh만 있고 public img에는 크기가 없었다. 지연 이미지250ms/캐시 제거의 독립 재현은 교체 직후 cover0/y0→복원 cover0/y1162→이미지 완료 cover200/y1362를 기록해 늦은 이미지 높이와 browser scroll anchoring의 실제 경쟁을 입증했다. warm cache에서는 처음부터 cover200이라 y1162를 유지했다. 수정 전 증거는 `artifacts/restore-layout-before.json`/`restore-layout-before.log`다. Astra/root 설계 검토 후 모바일 cover만 h20vh로 공간을 미리 확보하고 desktop md:h-auto와 기존 absolute/max-height를 보존했다. 공식 복귀 회귀는 이미지 응답 gate를 닫아 incomplete 상태의 cover200·원래 y±2를 확인한 뒤 해제하고, 완료 후에도 같은 좌표를 확인한다. 전역 anchoring 해제·고정 대기·좌표 오차 확대는 하지 않았다.
+
+감사 실패 보고서 진단도 Docker의 분리된 임시 입력에서 수행했다. 첫 합성 fixture는 build/verify 파일 누락으로 기대 오류와 달라 exit1이었다. fixture만 보완한 `artifacts/ci-audit-failure-proof-confirmed.log`는 exit0이며 audit 명령 exit2와 실제 Zod 정책 실패가 각각 현재 raw JSON 저장·summary failed/실패 사유·프로세스 exit1로 남음을 확인했다. 실제 소스나 감사 결과를 합성 자료로 대체하지 않았다.
+
+cover 보완 후 전체 실행 `77c8b5af-9732-4744-8942-bbff21766fc2`도 보안·세 base 빌드/정적 검사는 통과했지만 이미지 gate를 닫은 모바일 태그 복원에서 expected1943/actual1775로 exit1이었다(`artifacts/ci-audit-verify-final.log`,147.4초). cover200 선예약 검사는 통과했다. 캐시 제거로 프로필 이미지의 별도 예약 결함이 드러났으며 avatar500ms 지연 독립 재현은 교체 maxY1775/avatar0→복원 y1775→avatar168/maxY1943 회복 뒤에도 y1775 잔존을 확인했다(`artifacts/restore-avatar-before.json`, `restore-avatar-delayed-before.log`). 즉 cover의200px scroll anchoring과 avatar의168px 최대 높이 clamp는 서로 다른 실제 원인이었다. Astra/root 추가 gate 후 기존 정사각 avatar의 anchor에 aspect-square 하나를 추가했다. 공식 회귀는 cover/avatar 응답을 함께 보류하고 두 이미지의 미완료 상태부터 cover200/정사각 avatar 공간과 원래 좌표±2를 확인한 뒤, 둘 다 완료된 뒤에도 같은 좌표를 확인한다.
+
 ## 후속 수정: 아래쪽 링크의 상향 스크롤 (READ-04, 2026-10-24)
 
 - [x] S01: 현재 계약·관련 코드와 설치 ScrollPlugin/core를 읽고 READ-03/READ-04와 수정 계획을 갱신한다.
 - [x] S02: Astra 설계 gate의 완료/취소/중복 탐색 조건을 충족하는 최소 구현을 확정한다.
 - [x] S03: 기존 화면의 상향 스크롤 후 교체를 구현하고 하단·짧은 목적지·reduced-motion·history/hash·연속 클릭 회귀를 확인한다.
-- [ ] S04: 필요한 Docker 검증, 문서 갱신과 Astra 최종 검토를 마치고 개발 서버를 복원한다.
+- [x] S04: 필요한 Docker 검증, 문서 갱신과 Astra 최종 검토를 마치고 개발 서버를 복원한다. 당시 감사 차단은 위 후속 CI 수정의 전체 exit0과 최종 승인으로 해소했다.
 
 시작 상태: 기존 개발 서버는 `127.0.0.1:4321`에서 실행 중이며 사용자는 `/archive/?tag=ICS`를 보고 있다. 아직 소스·빌드·타입 검사를 시작하지 않고 읽기 전용 설치본 확인과 문서 작업부터 진행한다. 이전 READ-03의 완료/실패·보완 이력과 원시 audit의 알려진15 advisory는 아래에 그대로 보존한다.
 

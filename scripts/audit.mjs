@@ -1,7 +1,12 @@
-import "./require-docker.mjs";
+import "./security.mjs";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { assertNoJsxRendering } from "./lib/audit-policy.mjs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { MAX_POST_TAGS, tagsSchema } from "../src/utils/tags-schema.ts";
+import {
+	assertNoJsxRendering,
+	assertZodContentBoundary,
+} from "./lib/audit-policy.mjs";
+import { readAuditSources } from "./lib/audit-sources.mjs";
 
 const result = spawnSync("pnpm", ["audit", "--prod", "--json"], {
 	encoding: "utf8",
@@ -36,34 +41,40 @@ const accepted = new Set([
 	"GHSA-238p-pmpm-9mq7",
 	"GHSA-rj75-hqrm-r3gf",
 	"GHSA-98hj-9722-w3j8",
+	"GHSA-mrhx-c7xc-m3w5",
 ]);
-const config = readFileSync("astro.config.mjs", "utf8");
-const packageData = JSON.parse(readFileSync("package.json", "utf8"));
-function sources(directory) {
-	return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
-		const path = `${directory}/${entry.name}`;
-		return entry.isDirectory()
-			? sources(path)
-			: [
-					{
-						path,
-						content: /\.(?:mdx|jsx|tsx|js|mjs|ts|astro|svelte|md)$/.test(path)
-							? readFileSync(path, "utf8")
-							: "",
-					},
-				];
+function checkPolicy() {
+	const config = readFileSync("astro.config.mjs", "utf8");
+	const packageData = JSON.parse(readFileSync("package.json", "utf8"));
+	const sourceFiles = readAuditSources("src");
+	assertNoJsxRendering({ packageData, config, sources: sourceFiles });
+	assertZodContentBoundary({
+		packageData,
+		config,
+		sources: sourceFiles,
+		tagsSchema,
+		maxTags: MAX_POST_TAGS,
+		entryPoints: {
+			build: readFileSync("scripts/build.mjs", "utf8"),
+			verify: readFileSync("scripts/verify.mjs", "utf8"),
+		},
 	});
+	if (/output:\s*["']server/.test(config) || /adapter\s*:/.test(config))
+		throw new Error(
+			"Audit risk review assumes static-only output without an adapter.",
+		);
+	if (packageData.pnpm?.overrides?.sharp !== "0.35.5")
+		throw new Error(
+			"Audit risk review requires patched sharp 0.35.5 override.",
+		);
+	if (packageData.pnpm?.overrides?.["serialize-javascript"] !== "7.1.3")
+		throw new Error(
+			"Audit policy requires patched serialize-javascript 7.1.3.",
+		);
+	const lock = readFileSync("pnpm-lock.yaml", "utf8");
+	if (/sharp@0\.(?:[0-2]?[0-9]|3[0-4])\./.test(lock))
+		throw new Error("Audit risk review found an older sharp in the lockfile.");
 }
-assertNoJsxRendering({ packageData, config, sources: sources("src") });
-if (/output:\s*["']server/.test(config) || /adapter\s*:/.test(config))
-	throw new Error(
-		"Audit risk review assumes static-only output without an adapter.",
-	);
-if (packageData.pnpm?.overrides?.sharp !== "0.35.5")
-	throw new Error("Audit risk review requires patched sharp 0.35.5 override.");
-const lock = readFileSync("pnpm-lock.yaml", "utf8");
-if (/sharp@0\.(?:[0-2]?[0-9]|3[0-4])\./.test(lock))
-	throw new Error("Audit risk review found an older sharp in the lockfile.");
 const records = Object.values(report.advisories).map((advisory) => ({
 	id: advisory.github_advisory_id || advisory.url?.split("/").at(-1),
 	module: advisory.module_name,
@@ -76,20 +87,35 @@ writeFileSync(
 	"artifacts/dependency-audit.json",
 	JSON.stringify(report, null, 2),
 );
-writeFileSync(
-	"artifacts/dependency-audit-summary.json",
-	JSON.stringify(
-		{
-			checkedAt: new Date().toISOString(),
-			rawAuditExitCode: result.status,
-			counts: report.metadata.vulnerabilities,
-			knownRisks: records,
-			unknown,
-		},
-		null,
-		2,
-	),
-);
+const checkedAt = new Date().toISOString();
+function saveSummary(policyStatus, policyError) {
+	writeFileSync(
+		"artifacts/dependency-audit-summary.json",
+		JSON.stringify(
+			{
+				checkedAt,
+				policyStatus,
+				policyError,
+				rawAuditExitCode: result.status,
+				counts: report.metadata.vulnerabilities,
+				knownRisks: records,
+				unknown,
+			},
+			null,
+			2,
+		),
+	);
+}
+saveSummary("pending");
+try {
+	if (result.status !== 0 && result.status !== 1)
+		throw new Error(`Audit command failed: ${result.status}`);
+	checkPolicy();
+} catch (error) {
+	saveSummary("failed", error instanceof Error ? error.message : String(error));
+	throw error;
+}
+saveSummary(unknown.length ? "failed" : "passed");
 console.log(
 	JSON.stringify({
 		level: records.length ? "WARN" : "INFO",
@@ -105,8 +131,6 @@ if (unknown.length) {
 	console.error(JSON.stringify(unknown));
 	process.exit(1);
 }
-if (result.status !== 0 && result.status !== 1)
-	throw new Error(`Audit command failed: ${result.status}`);
 if (records.length)
 	console.log(
 		"Known dependency advisories remain. They are explicitly bounded and recorded; this is not a clean dependency audit. See docs/security-spec.md.",

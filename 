@@ -1,0 +1,35 @@
+warning: in the working copy of 'README.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/architecture.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/security-spec.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'package.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'pnpm-lock.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/audit.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/browser-check.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/lib/audit-policy.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/security.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/verify.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'specs/personal-blog/plan.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'specs/personal-blog/spec.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'specs/personal-blog/tasks.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/PostCard.astro', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/widget/Profile.astro', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/content/config.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'tests/audit-policy.test.ts', LF will be replaced by CRLF the next time Git touches it
+ README.md                           |   6 [32m+[m[31m-[m
+ docs/architecture.md                |   6 [32m++[m
+ docs/security-spec.md               |  16 [32m+++[m[31m-[m
+ package.json                        |   8 [32m+[m[31m-[m
+ pnpm-lock.yaml                      |  10 [32m+[m[31m--[m
+ scripts/audit.mjs                   | 112 [32m+++++++++++++++++[m[31m-----------[m
+ scripts/browser-check.mjs           | 108 [32m+++++++++++++++++++++++++[m[31m--[m
+ scripts/lib/audit-policy.mjs        |  94 [32m++++++++++++++++++++++++[m
+ scripts/security.mjs                |   4 [32m+[m[31m-[m
+ scripts/verify.mjs                  |   1 [32m+[m
+ specs/personal-blog/plan.md         |  10 [32m+++[m
+ specs/personal-blog/spec.md         |   2 [32m+[m
+ specs/personal-blog/tasks.md        |  29 [32m+++++++[m[31m-[m
+ src/components/PostCard.astro       |   2 [32m+[m[31m-[m
+ src/components/widget/Profile.astro |   2 [32m+[m[31m-[m
+ src/content/config.ts               |   3 [32m+[m[31m-[m
+ tests/audit-policy.test.ts          | 141 [32m+++++++++++++++++++++++++++++++++++[m[31m-[m
+ 17 files changed, 485 insertions(+), 69 deletions(-)

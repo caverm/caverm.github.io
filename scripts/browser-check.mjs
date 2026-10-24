@@ -257,11 +257,109 @@ async function checkLowerLinkScrolling(page, origin, base) {
 			const start = await page.evaluate(() => window.scrollY);
 			assert(start > 1, "the real tag/category link is clicked below the top");
 			await navigateWithoutPageMotion(page, link, destination);
-			await page.goBack({ waitUntil: "networkidle" });
-			await page.waitForFunction(
-				(expected) => Math.abs(window.scrollY - expected) <= 2,
-				start,
-			);
+			const imageUrl = `${origin}${base}images/notes.svg`;
+			const avatarUrl = `${origin}${base}images/avatar.svg`;
+			const imagePattern = /\/images\/(?:notes|avatar)\.svg$/;
+			let releaseImage;
+			const imageGate = new Promise((resolve) => {
+				releaseImage = resolve;
+			});
+			const holdImage = async (route) => {
+				await imageGate;
+				await route.continue();
+			};
+			await page.route(imagePattern, holdImage);
+			const devtools = await page.context().newCDPSession(page);
+			await devtools.send("Network.clearBrowserCache");
+			await devtools.detach();
+			const requestedImages = Promise.all([
+				page.waitForRequest(imageUrl, { timeout: 5000 }),
+				page.waitForRequest(avatarUrl, { timeout: 5000 }),
+			]);
+			const returning = page.goBack({ waitUntil: "networkidle" });
+			try {
+				await requestedImages;
+				await page.waitForFunction(
+					() => document.querySelector("main img") && !window.swup.navigating,
+				);
+				assert.equal(
+					await page
+						.locator("main img")
+						.first()
+						.evaluate((img) => img.complete),
+					false,
+				);
+				const avatar = await page
+					.locator("#sidebar img")
+					.first()
+					.evaluate((img) => {
+						const box = img.closest("a").getBoundingClientRect();
+						return {
+							complete: img.complete,
+							width: box.width,
+							height: box.height,
+						};
+					});
+				assert.equal(avatar.complete, false);
+				assert(
+					avatar.height > 0 && Math.abs(avatar.height - avatar.width) <= 1,
+					"avatar reserves its square before image loading",
+				);
+				if (width === 390)
+					assert.equal(
+						await page
+							.locator("main img")
+							.first()
+							.evaluate(
+								(img) => img.closest("a").getBoundingClientRect().height,
+							),
+						200,
+						"mobile cover reserves 20vh before image loading",
+					);
+				await page.waitForFunction(
+					(expected) => Math.abs(window.scrollY - expected) <= 2,
+					start,
+				);
+				releaseImage();
+				await returning;
+				await page.waitForFunction(
+					() =>
+						document.querySelector("main img")?.complete &&
+						document.querySelector("#sidebar img")?.complete,
+				);
+				await page.evaluate(
+					() =>
+						new Promise((resolve) =>
+							requestAnimationFrame(() => requestAnimationFrame(resolve)),
+						),
+				);
+				assert(
+					Math.abs((await page.evaluate(() => scrollY)) - start) <= 2,
+					"history position stays restored after delayed images load",
+				);
+			} catch (error) {
+				console.error(
+					JSON.stringify({
+						event: "history.lower-link.restore.failed",
+						base,
+						width,
+						selector,
+						expected: start,
+						state: await page.evaluate(() => ({
+							y: window.scrollY,
+							height: document.documentElement.scrollHeight,
+							viewportHeight: innerHeight,
+							navigating: window.swup.navigating,
+							restoration: history.scrollRestoration,
+						})),
+					}),
+				);
+				throw error;
+			} finally {
+				releaseImage();
+				await returning.catch(() => {});
+				await page.unroute(imagePattern, holdImage);
+			}
 		}
 	}
 	await page.emulateMedia({ reducedMotion: "reduce" });

@@ -1,6 +1,7 @@
 import "./require-docker.mjs";
-import { readdirSync, readFileSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
+import { assertSourceTextSize } from "./lib/source-limits.mjs";
 
 function files(dir) {
 	return readdirSync(dir, { withFileTypes: true }).flatMap((item) =>
@@ -11,6 +12,7 @@ function files(dir) {
 }
 let count = 0;
 for (const file of [...files("src"), ...files("public")]) {
+	assertSourceTextSize(file, statSync(file).size);
 	const bytes = readFileSync(file);
 	const header = bytes.subarray(0, 96).toString("latin1");
 	if (

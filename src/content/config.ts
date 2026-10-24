@@ -1,5 +1,6 @@
 import { defineCollection, z } from "astro:content";
 import { normalizeContentDate } from "../utils/content-date";
+import { tagsSchema } from "../utils/tags-schema";
 
 const postsCollection = defineCollection({
 	schema: z.object({
@@ -12,7 +13,7 @@ const postsCollection = defineCollection({
 		draft: z.boolean().optional().default(false),
 		description: z.string().optional().default(""),
 		image: z.string().optional().default(""),
-		tags: z.array(z.string()).optional().default([]),
+		tags: tagsSchema,
 		categoryId: z.string().min(1),
 		lang: z.string().optional().default(""),
 

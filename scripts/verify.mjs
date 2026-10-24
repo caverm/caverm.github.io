@@ -38,6 +38,7 @@ function step(name, args, env = {}) {
 	}
 }
 log("INFO", "verify.start");
+step("source-input-limits", ["exec", "node", "scripts/security.mjs"]);
 step("format-lint", ["lint"]);
 step("cms-config", ["cms:check"]);
 step("astro-types-content", ["check"]);

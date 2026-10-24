@@ -2,6 +2,16 @@
 
 상태: 상세 설계 검토 후 확정하고 구현한 계획. 2026-10-23.
 
+## 후속 수정: GitHub verify 의존성 감사 실패 (2026-10-24)
+
+재현 근거는 GitHub run40056990383/job120762039360의 source-security 단계이며 `artifacts/ci-failure-40056990383.log`에 보존한다. lint·CMS·타입·단위·소스 검사 뒤 신규 Zod/serialize-javascript advisory2건으로 exit1이다. Git 설정이나 페이지 배포의 실패가 아니다. 로컬 HEAD f84739b와 원격 실행 commit76af7ee는 다르므로 reset·원격 변경 없이 현재 소스에 최소 수정한다.
+
+serialize-javascript override만 공식 패치7.1.3으로 갱신하고 Docker에서 lockfile을 재생성한다. Astro5의 Zod3 의존성은 공식 v3 backport가 없으므로4 major로 강제 교체하지 않는다. 대신 현재 애플리케이션의 유일한 Zod 컬렉션 입력인 tags를 공용 스키마로 분리하고 원소 검사 전에64개 초과 입력을 fatal/NEVER로 거부한다. src/public 텍스트 파일의 stat-before-read1MiB 한도를 check/dev/build/verify 앞에 둔다. 감사는 실제 스키마와 입력 경계·선행 검사 배선을 확인하고 그 조건에서만 정확한 Zod GHSA를 잔여 위험으로 분류한다. 공통 계약·한계는 security-spec의 SEC-CONTENT-02와 Zod 항목이 기준이다. Astra 설계 gate와 실제 완화/negative 회귀 검토를 거친다.
+
+63/64/65개, 백만 길이 배열의 원소 접근0/단일 fatal 오류, 기본값/잘못된 타입, 대소문자·이미지 제외·실제 사전 검사의 실패 순서, 스키마 제거/무제한 컬렉션/새 import·loader·SSR/선행 검사 제거를 회귀 검사한다. frozen 설치·전체 verify·세 base 산출물과 기존 브라우저 회귀를 Docker에서 수행하고 개발 서버를 복원한다. 감사 정책의 통과와 원시 audit의 잔여 실패는 구분한다. 커밋·push·원격 CI 재실행·게시 요청은 하지 않는다. 복구는 이 수정의 의존성 override/lock와 입력 보호·감사 코드만 대상으로 하며 이전 스크롤·아카이브의 기존 제약은 유지한다.
+
+전체 검증에서 추가로 드러난 기존 모바일 cover의 이미지 완료 후200px layout shift는 별도 실측·설계 gate를 거쳐 같은 수정 묶음에서 좁게 보완한다. PostCard의 기존20vh 상한과 같은 공간을 선예약하고 데스크톱 배치는 유지한다. 이미지 응답 gate로 복원 전·후 좌표를 모두 확인한다. 이 보완은 원시 감사 실패의 원인과 구분하며 실패 이력과 근거는 tasks에 남긴다.
+
 ## 후속 수정: 아래쪽 링크의 상향 스크롤 (2026-10-24)
 
 현재 계약은 READ-03/READ-04다. 이전에 모든 페이지 이동 스크롤을 즉시 처리했더니 하단의 태그·카테고리 클릭이 새로고침처럼 느껴진다는 후속 요구를 반영한다. 범위는 태그·분류를 포함한 일반 내부 링크를 스크롤된 화면에서 누르는 경우다. 본문 fade/transform/등장·순차 연출은 복구하지 않는다. 이미 상단, history 복원, hash 목적지와 reduced-motion은 기존 즉시 처리를 유지한다.

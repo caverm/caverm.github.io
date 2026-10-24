@@ -17,10 +17,10 @@
 		"verify": "node scripts/verify.mjs",
 		"test:unit": "node --experimental-strip-types --test tests/*.test.ts",
 		"test:browser": "node scripts/browser-check.mjs",
-		"security": "node scripts/security.mjs && node scripts/audit.mjs",
-		"audit:dependencies": "node scripts/audit.mjs",
+		"security": "node scripts/security.mjs && node --experimental-strip-types scripts/audit.mjs",
+		"audit:dependencies": "node --experimental-strip-types scripts/audit.mjs",
 		"predev": "node scripts/security.mjs",
-		"precheck": "node scripts/require-docker.mjs",
+		"precheck": "node scripts/security.mjs",
 		"prepreview": "node scripts/require-docker.mjs",
 		"cms:sync": "node --experimental-strip-types scripts/cms-config.mjs",
 		"cms:check": "node --experimental-strip-types scripts/cms-config.mjs --check",
@@ -88,7 +88,7 @@
 	"pnpm": {
 		"overrides": {
 			"sharp": "0.35.5",
-			"serialize-javascript": "7.0.5"
+			"serialize-javascript": "7.1.3"
 		}
 	}
 }
