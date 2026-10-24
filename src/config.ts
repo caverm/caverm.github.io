@@ -8,8 +8,8 @@ import type {
 import { LinkPreset } from "./types/config";
 
 export const siteConfig: SiteConfig = {
-	title: "나의 기록",
-	subtitle: "보안과 컴퓨터공학, 배우고 만든 것을 기록합니다",
+	title: "개발 블로그",
+	subtitle: "보안 공부 기록을 작성하고 있습니다",
 	lang: "ko", // Language code, e.g. 'en', 'zh_CN', 'ja', etc.
 	themeColor: {
 		hue: 250, // Default hue for the theme color, from 0 to 360. e.g. red: 0, teal: 200, cyan: 250, pink: 345
@@ -49,8 +49,8 @@ export const navBarConfig: NavBarConfig = {
 };
 export const profileConfig: ProfileConfig = {
 	avatar: "/images/avatar.svg", // Relative to the /src directory. Relative to the /public directory if it starts with '/'
-	name: "블로그 주인",
-	bio: "안녕하세요. 보안·CTF·컴퓨터공학과 프로젝트를 기록합니다. 프로필을 나의 이야기로 바꿔 주세요.",
+	name: "caverm",
+	bio: "목표를 센터에 넣고 스위치.",
 	links: [],
 };
 
