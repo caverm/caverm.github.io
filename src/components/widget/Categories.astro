@@ -1,0 +1,60 @@
+---
+import {
+	getCategoryList,
+	getSortedPosts,
+	taxonomy,
+} from "../../utils/content-utils";
+import CategoryBranch from "./CategoryBranch.astro";
+
+interface Props {
+	class?: string;
+	style?: string;
+}
+const categories = await getCategoryList();
+const posts = await getSortedPosts();
+const path = Astro.url.pathname;
+const categoryMatch = /\/categories\/([^/]+)\/$/.exec(path);
+const post = posts.find((item) => path.endsWith(`/posts/${item.slug}/`));
+const selected = categoryMatch?.[1] ?? post?.data.categoryId ?? "";
+const activeIds = new Set(taxonomy.ancestors(selected).map((item) => item.id));
+const counts = new Map(categories.map((item) => [item.id, item.count]));
+---
+<category-navigation class:list={['card-base p-4 block', Astro.props.class]} style={Astro.props.style}>
+  <h2 class="font-bold text-lg text-90 mb-3 pl-3 border-l-4 border-[var(--primary)]">카테고리</h2>
+  <nav aria-label="주제별 글 탐색">
+    <ul>{(taxonomy.children.get(undefined) ?? []).map(category => <CategoryBranch category={category} selected={selected} activeIds={activeIds} counts={counts} />)}</ul>
+  </nav>
+</category-navigation>
+<style is:global>
+  .category-node { min-width: 0; }
+  .category-row { display: flex; align-items: center; padding-inline-start: calc(var(--level) * .65rem); gap: .125rem; border-radius: .5rem; }
+  .category-toggle, .category-spacer { flex: 0 0 1.65rem; width: 1.65rem; height: 2.4rem; }
+  .category-toggle span { display: block; font-size: 1.5rem; transition: transform .2s; }
+  .category-toggle[aria-expanded="true"] span { transform: rotate(90deg); }
+  .category-link { display: flex; min-width: 0; flex: 1; justify-content: space-between; padding: .5rem .5rem; gap: .25rem; }
+  .category-name { overflow-wrap: anywhere; }
+  .category-count { font-size: .8rem; color: var(--primary); flex-shrink: 0; }
+  .category-selected { background: var(--btn-plain-bg-hover); font-weight: 700; color: var(--primary); }
+  category-navigation [hidden] { display: none !important; }
+  category-navigation button:focus-visible, category-navigation a:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+</style>
+<script>
+  class CategoryNavigation extends HTMLElement {
+    connectedCallback() {
+      if (this.dataset.ready) return;
+      this.dataset.ready = 'true';
+      this.addEventListener('click', event => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+        const button = target.closest<HTMLButtonElement>('.category-toggle');
+        if (!button) return;
+        const panel = document.getElementById(button.getAttribute('aria-controls') ?? '');
+        if (!panel) return;
+        const expanded = button.getAttribute('aria-expanded') !== 'true';
+        button.setAttribute('aria-expanded', String(expanded));
+        panel.hidden = !expanded;
+      });
+    }
+  }
+  if (!customElements.get('category-navigation')) customElements.define('category-navigation', CategoryNavigation);
+</script>

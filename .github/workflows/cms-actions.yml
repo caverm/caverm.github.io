@@ -1,0 +1,88 @@
+name: Pages CMS actions
+on:
+  workflow_dispatch:
+    inputs:
+      payload:
+        description: Pages CMS action context (validated without logging)
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: pages-cms-main
+  cancel-in-progress: false
+jobs:
+  validate:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    outputs:
+      action: ${{ steps.validate.outputs.action }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: main
+      - name: Validate the fixed action and repository context in Docker
+        id: validate
+        run: |
+          image="$(awk 'NR == 1 { print $2 }' Dockerfile)"
+          docker run --rm --user "$(id -u):$(id -g)" \
+            --volume "$GITHUB_WORKSPACE:/workspace" --workdir /workspace \
+            --mount "type=bind,source=$GITHUB_EVENT_PATH,target=/run/cms-event.json,readonly" \
+            --env GITHUB_EVENT_PATH=/run/cms-event.json \
+            --env GITHUB_REPOSITORY --env GITHUB_REF --env GITHUB_RUN_ID \
+            "$image" node --experimental-strip-types scripts/cms-action.mjs
+          cat artifacts/cms-action-output.txt >> "$GITHUB_OUTPUT"
+
+  refresh:
+    if: needs.validate.outputs.action == 'refresh-categories'
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: main
+      - name: Match the nonroot Linux workspace owner
+        run: |
+          echo "BLOG_UID=$(id -u)" >> "$GITHUB_ENV"
+          echo "BLOG_GID=$(id -g)" >> "$GITHUB_ENV"
+      - name: Generate and validate only the CMS configuration
+        run: |
+          docker compose build
+          docker compose run --rm blog pnpm install --frozen-lockfile
+          docker compose run --rm blog pnpm cms:sync
+          docker compose run --rm blog pnpm cms:check
+          docker compose run --rm blog pnpm build
+      - name: Commit only generated settings without overwriting concurrent main changes
+        run: |
+          changed="$(git diff --name-only)"
+          if [[ -n "$changed" && "$changed" != ".pages.yml" ]]; then
+            echo "Unexpected tracked changes; refusing to commit."
+            exit 1
+          fi
+          if ! git diff --quiet -- .pages.yml; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add -- .pages.yml
+            test "$(git diff --cached --name-only)" = '.pages.yml'
+            git commit -m 'chore(cms): refresh generated category choices'
+            git push origin HEAD:main
+          fi
+      - name: Explicitly verify the latest generated commit without publishing
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run verify.yml --repo "$GITHUB_REPOSITORY" --ref main -f publish=false
+
+  publish:
+    if: needs.validate.outputs.action == 'publish-blog'
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Request the existing verified main-only publishing workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run verify.yml --repo "$GITHUB_REPOSITORY" --ref main -f publish=true

@@ -1,0 +1,254 @@
+import { createTaxonomy } from "../../src/utils/taxonomy.ts";
+
+export const CMS_ACTIONS = ["refresh-categories", "publish-blog"];
+export const CMS_IMAGE_EXTENSIONS = ["png", "jpg", "jpeg", "webp", "gif"];
+
+export function createCmsConfig(definitions) {
+	const tree = createTaxonomy(definitions, []);
+	const values = [];
+	function add(parentId) {
+		for (const category of tree.children.get(parentId) ?? []) {
+			values.push({
+				name: category.id,
+				label: tree
+					.ancestors(category.id)
+					.map((item) => item.name)
+					.join(" / "),
+			});
+			add(category.id);
+		}
+	}
+	add(undefined);
+	const labelCounts = new Map();
+	for (const value of values)
+		labelCounts.set(value.label, (labelCounts.get(value.label) ?? 0) + 1);
+	for (const value of values)
+		if (labelCounts.get(value.label) > 1)
+			value.label = `${value.label} [${value.name}]`;
+	const mediaOptions = {
+		media: "images",
+		extensions: CMS_IMAGE_EXTENSIONS,
+		rename: "random",
+	};
+	return {
+		media: [
+			{
+				name: "images",
+				label: "글 이미지",
+				input: "public/images",
+				output: "/images",
+				extensions: CMS_IMAGE_EXTENSIONS,
+				rename: "random",
+			},
+		],
+		settings: { content: { merge: true } },
+		content: [
+			{
+				name: "posts",
+				label: "글",
+				type: "collection",
+				path: "src/content/posts",
+				format: "yaml-frontmatter",
+				subfolders: true,
+				filename: { template: "{fields.slug}.md", field: "create" },
+				operations: { rename: false },
+				view: {
+					primary: "title",
+					fields: ["title", "published", "draft"],
+					sort: ["published", "title"],
+					default: { sort: "published", order: "desc" },
+				},
+				fields: [
+					{ name: "title", label: "제목", type: "string", required: true },
+					{
+						name: "slug",
+						label: "글 주소 ID",
+						type: "string",
+						required: true,
+						pattern: {
+							regex: "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+							message: "영문 소문자·숫자·하이픈을 사용하세요.",
+						},
+						description:
+							"새 글에 한 번 지정합니다. 기존 글은 제목을 바꿔도 이 값을 유지해야 주소가 바뀌지 않습니다.",
+					},
+					{
+						name: "published",
+						label: "발행일",
+						type: "date",
+						required: true,
+						options: { format: "yyyy-MM-dd" },
+					},
+					{
+						name: "updated",
+						label: "수정일",
+						type: "date",
+						default: "",
+						options: { format: "yyyy-MM-dd" },
+					},
+					{
+						name: "draft",
+						label: "초안",
+						type: "boolean",
+						default: true,
+						description:
+							"초안은 사이트에 공개되지 않습니다. 초안 해제 후에도 게시 버튼을 별도로 눌러야 Pages에 반영됩니다.",
+					},
+					{
+						name: "description",
+						label: "짧은 설명",
+						type: "text",
+						default: "",
+					},
+					{
+						name: "image",
+						label: "대표 이미지",
+						type: "image",
+						default: "",
+						options: mediaOptions,
+					},
+					{
+						name: "categoryId",
+						label: "카테고리",
+						type: "select",
+						required: true,
+						options: { values, multiple: false },
+						description:
+							"분류를 바꿨다면 먼저 카테고리 선택지를 갱신하고 편집기를 다시 여세요.",
+					},
+					{
+						name: "tags",
+						label: "태그",
+						type: "string",
+						list: true,
+						default: [],
+					},
+					{
+						name: "lang",
+						label: "언어",
+						type: "select",
+						default: "ko",
+						options: {
+							values: [
+								{ name: "ko", label: "한국어" },
+								{ name: "en", label: "English" },
+							],
+							multiple: false,
+						},
+					},
+					{
+						name: "body",
+						label: "본문",
+						type: "rich-text",
+						options: { ...mediaOptions, format: "markdown", switcher: true },
+						description:
+							"코드 fence·지시문 등 복잡한 Markdown은 Source 모드로 편집하고 저장 전후 변경 내용을 확인하세요.",
+					},
+				],
+			},
+			{
+				name: "categories",
+				label: "카테고리 관리",
+				type: "file",
+				path: "src/data/categories.json",
+				format: "json",
+				list: true,
+				operations: { create: false, rename: false, delete: false },
+				fields: [
+					{
+						name: "id",
+						label: "고유 ID",
+						type: "string",
+						required: true,
+						pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+						description:
+							"생성 후 유지하세요. 사용 중인 ID를 변경/삭제하면 기존 글의 참조도 함께 수정해야 합니다.",
+					},
+					{ name: "name", label: "표시 이름", type: "string", required: true },
+					{
+						name: "parentId",
+						label: "상위 카테고리",
+						type: "select",
+						options: {
+							values: [{ name: "", label: "최상위 (부모 없음)" }, ...values],
+							multiple: false,
+						},
+						description:
+							"자기 자신이나 자신의 하위 분류는 부모로 선택하지 마세요. 새 부모는 저장 후 선택지 갱신을 완료해야 나타납니다.",
+					},
+					{
+						name: "order",
+						label: "정렬 순서",
+						type: "number",
+						required: true,
+						default: 0,
+					},
+				],
+			},
+		],
+		actions: [
+			{
+				name: "refresh-categories",
+				label: "카테고리 선택지 갱신",
+				workflow: "cms-actions.yml",
+				ref: "main",
+				confirm: {
+					title: "선택지를 갱신할까요?",
+					message:
+						"먼저 카테고리를 저장하세요. main의 분류를 검증한 뒤 생성된 CMS 설정만 갱신하고 검증을 요청합니다. 게시하지 않습니다.",
+					button: "검증하고 갱신",
+				},
+			},
+			{
+				name: "publish-blog",
+				label: "검증 후 게시",
+				workflow: "cms-actions.yml",
+				ref: "main",
+				confirm: {
+					title: "main의 공개 글을 게시할까요?",
+					message:
+						"저장된 main의 전체 사이트를 검증하고 통과한 산출물만 GitHub Pages에 게시합니다. 초안은 포함되지 않습니다.",
+					button: "검증 후 게시 요청",
+				},
+			},
+		],
+	};
+}
+
+export function renderCmsConfig(definitions) {
+	return `# Generated by pnpm cms:sync from src/data/categories.json. Do not edit by hand.\n# JSON notation is valid YAML; categories remain authoritative in their single JSON file.\n${JSON.stringify(createCmsConfig(definitions), null, 2)}\n`;
+}
+
+export function checkCmsConfig(actual, definitions) {
+	if (actual !== renderCmsConfig(definitions))
+		throw new Error(
+			"CMS_CONFIG_STALE: run docker compose run --rm blog pnpm cms:sync, or use the CMS category refresh action.",
+		);
+}
+
+export function validateCmsPayload(input, { repository, ref }) {
+	if (ref !== "refs/heads/main") throw new Error("CMS_ACTION_MAIN_ONLY");
+	let payload;
+	try {
+		payload = JSON.parse(input);
+	} catch {
+		throw new Error("CMS_ACTION_INVALID_JSON");
+	}
+	if (
+		payload?.source !== "pages-cms" ||
+		!CMS_ACTIONS.includes(payload?.action?.name)
+	)
+		throw new Error("CMS_ACTION_UNSUPPORTED");
+	const context = payload.repository;
+	if (
+		!context ||
+		typeof context.owner !== "string" ||
+		typeof context.repo !== "string" ||
+		`${context.owner}/${context.repo}`.toLowerCase() !==
+			repository?.toLowerCase()
+	)
+		throw new Error("CMS_ACTION_WRONG_REPOSITORY");
+	if (context.ref !== "main" || context.workflowRef !== "main")
+		throw new Error("CMS_ACTION_WRONG_REF");
+	return payload.action.name;
+}

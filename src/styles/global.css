@@ -1,0 +1,8 @@
+/* Process Fuwari's shared utilities and Markdown @apply rules in one Tailwind context. */
+@import "./main.css";
+@import "./markdown.css";
+@import "./expressive-code.css";
+@import "./scrollbar.css";
+@import "./photoswipe.css";
+@tailwind base;
+@tailwind utilities;

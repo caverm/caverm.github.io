@@ -1,0 +1,13 @@
+---
+import MainGridLayout from "../../layouts/MainGridLayout.astro";
+import { getCategoryList, taxonomy } from "../../utils/content-utils";
+
+const categories = await getCategoryList();
+---
+<MainGridLayout title="카테고리">
+  <section class="card-base px-6 py-6">
+    <h1 class="text-3xl font-bold text-90 mb-4">카테고리</h1>
+    <p class="text-50 mb-4">관심 있는 주제를 따라 기록을 찾아보세요. 글 수에는 하위 카테고리가 포함됩니다.</p>
+    <ul class="space-y-3">{categories.map(category => <li><a href={category.url} class="link text-90">{taxonomy.ancestors(category.id).map(item => item.name).join(' / ')} <span class="text-50">({category.count})</span></a></li>)}</ul>
+  </section>
+</MainGridLayout>

@@ -1,0 +1,22 @@
+---
+import CategoryBreadcrumb from "../../components/CategoryBreadcrumb.astro";
+import PostPage from "../../components/PostPage.astro";
+import MainGridLayout from "../../layouts/MainGridLayout.astro";
+import { getSortedPosts, taxonomy } from "../../utils/content-utils";
+export async function getStaticPaths() {
+	const posts = await getSortedPosts();
+	return [...taxonomy.byId.values()].map((category) => ({
+		params: { id: category.id },
+		props: { category, posts: taxonomy.postsIn(category.id, posts) },
+	}));
+}
+const { category, posts } = Astro.props;
+---
+<MainGridLayout title={category.name}>
+  <section class="card-base px-6 py-6 mb-4">
+    <CategoryBreadcrumb categoryId={category.id} current />
+    <h1 class="text-3xl font-bold text-90">{category.name}</h1>
+    <p class="text-50 mt-2">하위 카테고리를 포함한 {posts.length}개의 글</p>
+  </section>
+  {posts.length > 0 ? <PostPage page={{ data: posts }} /> : <p class="card-base p-6 text-50">아직 공개된 글이 없습니다. 다음 기록을 기다려 주세요.</p>}
+</MainGridLayout>

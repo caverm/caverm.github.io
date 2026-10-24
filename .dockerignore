@@ -1,0 +1,11 @@
+.git
+.upstream-fuwari
+node_modules
+dist
+.astro
+artifacts
+test-results
+playwright-report
+.env
+.env.*
+!.env.example

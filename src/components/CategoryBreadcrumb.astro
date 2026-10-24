@@ -1,0 +1,17 @@
+---
+import { taxonomy } from "../utils/content-utils";
+import { getCategoryUrl, url } from "../utils/url-utils";
+
+interface Props {
+	categoryId: string;
+	current?: boolean;
+}
+const { categoryId, current = false } = Astro.props;
+const crumbs = taxonomy.ancestors(categoryId);
+---
+<nav aria-label="카테고리 경로" class="category-breadcrumb text-sm text-50 mb-4">
+  <ol class="flex flex-wrap items-center gap-2">
+    <li><a href={url('/categories/')} class="link">카테고리</a></li>
+    {crumbs.map((item, index) => <li class="flex items-center gap-2"><span aria-hidden="true">/</span><a class="link" href={getCategoryUrl(item.id)} aria-current={current && index === crumbs.length - 1 ? 'page' : undefined}>{item.name}</a></li>)}
+  </ol>
+</nav>

@@ -1,0 +1,31 @@
+services:
+  blog:
+    build:
+      context: .
+      args:
+        APP_UID: ${BLOG_UID:-1000}
+        APP_GID: ${BLOG_GID:-1000}
+    init: true
+    user: node
+    working_dir: /workspace
+    environment:
+      SITE_URL: ${SITE_URL:-https://example.github.io}
+      BASE_PATH: ${BASE_PATH:-/}
+      ASTRO_TELEMETRY_DISABLED: "1"
+      WATCH_USE_POLLING: ${WATCH_USE_POLLING:-true}
+      PLAYWRIGHT_BROWSERS_PATH: /opt/playwright
+      PNPM_HOME: /pnpm
+    ports:
+      - "127.0.0.1:4321:4321"
+    volumes:
+      - .:/workspace
+      - node_modules:/workspace/node_modules
+      - pnpm_store:/pnpm/store
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+volumes:
+  node_modules:
+  pnpm_store:

@@ -1,0 +1,30 @@
+---
+import { taxonomy } from "../../utils/content-utils";
+import type { CategoryDefinition } from "../../utils/taxonomy";
+import { getCategoryUrl } from "../../utils/url-utils";
+
+interface Props {
+	category: CategoryDefinition;
+	selected: string;
+	activeIds: Set<string>;
+	counts: Map<string, number>;
+	depth?: number;
+}
+const { category, selected, activeIds, counts, depth = 0 } = Astro.props;
+const children = taxonomy.children.get(category.id) ?? [];
+const open = activeIds.has(category.id);
+const panelId = `category-children-${category.id}`;
+---
+<li class="category-node" style={`--level: ${Math.min(depth, 3)}`}>
+  <div class="category-row" class:list={[{ 'category-selected': selected === category.id }]}>
+    {children.length > 0 ? <button type="button" class="category-toggle btn-plain rounded-lg" aria-label={`${category.name} 하위 카테고리`} aria-expanded={open ? 'true' : 'false'} aria-controls={panelId}>
+      <span aria-hidden="true">›</span>
+    </button> : <span class="category-spacer" aria-hidden="true"></span>}
+    <a href={getCategoryUrl(category.id)} aria-current={selected === category.id ? 'page' : undefined} data-category-id={category.id} class="category-link rounded-lg btn-plain">
+      <span class="category-name">{category.name}</span><span class="category-count" aria-label={`${counts.get(category.id) ?? 0}개 글`}>{counts.get(category.id) ?? 0}</span>
+    </a>
+  </div>
+  {children.length > 0 && <ul id={panelId} hidden={!open}>
+    {children.map(child => <Astro.self category={child} selected={selected} activeIds={activeIds} counts={counts} depth={depth + 1} />)}
+  </ul>}
+</li>
