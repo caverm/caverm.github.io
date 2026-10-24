@@ -16,8 +16,8 @@ export const siteConfig: SiteConfig = {
 		fixed: false, // Hide the theme color picker for visitors
 	},
 	banner: {
-		enable: false,
-		src: "/images/notes.svg", // Relative to the /src directory. Relative to the /public directory if it starts with '/'
+		enable: true,
+		src: "/images/asuka.png", // Relative to the /src directory. Relative to the /public directory if it starts with '/'
 		position: "center", // Equivalent to object-position, only supports 'top', 'center', 'bottom'. 'center' by default
 		credit: {
 			enable: false, // Display the credit text of the banner image
@@ -48,7 +48,7 @@ export const navBarConfig: NavBarConfig = {
 	],
 };
 export const profileConfig: ProfileConfig = {
-	avatar: "/images/avatar.svg", // Relative to the /src directory. Relative to the /public directory if it starts with '/'
+	avatar: "/images/asuka.png", // Relative to the /src directory. Relative to the /public directory if it starts with '/'
 	name: "caverm",
 	bio: "목표를 센터에 넣고 스위치.",
 	links: [],
