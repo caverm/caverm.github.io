@@ -45,6 +45,7 @@ export const navBarConfig: NavBarConfig = {
 		{ name: "카테고리", url: "/categories/" },
 		LinkPreset.Archive,
 		LinkPreset.About,
+		LinkPreset.Github,
 	],
 };
 export const profileConfig: ProfileConfig = {
