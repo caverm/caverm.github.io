@@ -131,68 +131,24 @@
                 "label": "보안"
               },
               {
+                "name": "conference",
+                "label": "보안 / 컨퍼런스"
+              },
+              {
+                "name": "standard",
+                "label": "보안 / 표준"
+              },
+              {
                 "name": "web-hacking",
                 "label": "보안 / 웹해킹"
               },
               {
-                "name": "sql-injection",
-                "label": "보안 / 웹해킹 / SQL Injection"
+                "name": "knowledge",
+                "label": "보안 / 웹해킹 / 지식"
               },
               {
-                "name": "practice",
-                "label": "보안 / 웹해킹 / SQL Injection / 실습"
-              },
-              {
-                "name": "security-notes",
-                "label": "보안 / 웹해킹 / SQL Injection / 실습 / 노트"
-              },
-              {
-                "name": "ot-ics",
-                "label": "보안 / OT·ICS"
-              },
-              {
-                "name": "nuclear-security",
-                "label": "보안 / OT·ICS / 원전보안"
-              },
-              {
-                "name": "ctf",
-                "label": "CTF"
-              },
-              {
-                "name": "ctf-web",
-                "label": "CTF / 웹"
-              },
-              {
-                "name": "ctf-notes",
-                "label": "CTF / 웹 / 노트"
-              },
-              {
-                "name": "cs",
-                "label": "컴퓨터공학"
-              },
-              {
-                "name": "operating-systems",
-                "label": "컴퓨터공학 / 운영체제"
-              },
-              {
-                "name": "memory-management",
-                "label": "컴퓨터공학 / 운영체제 / 메모리관리"
-              },
-              {
-                "name": "projects",
-                "label": "프로젝트"
-              },
-              {
-                "name": "blog",
-                "label": "프로젝트 / 블로그"
-              },
-              {
-                "name": "dev-notes",
-                "label": "프로젝트 / 블로그 / 개발기록"
-              },
-              {
-                "name": "empty",
-                "label": "프로젝트 / 다음 프로젝트"
+                "name": "webhacking-kr",
+                "label": "보안 / 웹해킹 / webhacking.kr"
               }
             ],
             "multiple": false
@@ -288,68 +244,24 @@
                 "label": "보안"
               },
               {
+                "name": "conference",
+                "label": "보안 / 컨퍼런스"
+              },
+              {
+                "name": "standard",
+                "label": "보안 / 표준"
+              },
+              {
                 "name": "web-hacking",
                 "label": "보안 / 웹해킹"
               },
               {
-                "name": "sql-injection",
-                "label": "보안 / 웹해킹 / SQL Injection"
+                "name": "knowledge",
+                "label": "보안 / 웹해킹 / 지식"
               },
               {
-                "name": "practice",
-                "label": "보안 / 웹해킹 / SQL Injection / 실습"
-              },
-              {
-                "name": "security-notes",
-                "label": "보안 / 웹해킹 / SQL Injection / 실습 / 노트"
-              },
-              {
-                "name": "ot-ics",
-                "label": "보안 / OT·ICS"
-              },
-              {
-                "name": "nuclear-security",
-                "label": "보안 / OT·ICS / 원전보안"
-              },
-              {
-                "name": "ctf",
-                "label": "CTF"
-              },
-              {
-                "name": "ctf-web",
-                "label": "CTF / 웹"
-              },
-              {
-                "name": "ctf-notes",
-                "label": "CTF / 웹 / 노트"
-              },
-              {
-                "name": "cs",
-                "label": "컴퓨터공학"
-              },
-              {
-                "name": "operating-systems",
-                "label": "컴퓨터공학 / 운영체제"
-              },
-              {
-                "name": "memory-management",
-                "label": "컴퓨터공학 / 운영체제 / 메모리관리"
-              },
-              {
-                "name": "projects",
-                "label": "프로젝트"
-              },
-              {
-                "name": "blog",
-                "label": "프로젝트 / 블로그"
-              },
-              {
-                "name": "dev-notes",
-                "label": "프로젝트 / 블로그 / 개발기록"
-              },
-              {
-                "name": "empty",
-                "label": "프로젝트 / 다음 프로젝트"
+                "name": "webhacking-kr",
+                "label": "보안 / 웹해킹 / webhacking.kr"
               }
             ],
             "multiple": false
