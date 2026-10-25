@@ -1,44 +1,37 @@
 [
-	{ "id": "security", "name": "보안", "order": 1 },
-	{ "id": "web-hacking", "name": "웹해킹", "parentId": "security", "order": 1 },
-	{
-		"id": "sql-injection",
-		"name": "SQL Injection",
-		"parentId": "web-hacking",
-		"order": 1
-	},
-	{ "id": "practice", "name": "실습", "parentId": "sql-injection", "order": 1 },
-	{
-		"id": "security-notes",
-		"name": "노트",
-		"parentId": "practice",
-		"order": 1
-	},
-	{ "id": "ot-ics", "name": "OT·ICS", "parentId": "security", "order": 2 },
-	{
-		"id": "nuclear-security",
-		"name": "원전보안",
-		"parentId": "ot-ics",
-		"order": 1
-	},
-	{ "id": "ctf", "name": "CTF", "order": 2 },
-	{ "id": "ctf-web", "name": "웹", "parentId": "ctf", "order": 1 },
-	{ "id": "ctf-notes", "name": "노트", "parentId": "ctf-web", "order": 1 },
-	{ "id": "cs", "name": "컴퓨터공학", "order": 3 },
-	{
-		"id": "operating-systems",
-		"name": "운영체제",
-		"parentId": "cs",
-		"order": 1
-	},
-	{
-		"id": "memory-management",
-		"name": "메모리관리",
-		"parentId": "operating-systems",
-		"order": 1
-	},
-	{ "id": "projects", "name": "프로젝트", "order": 4 },
-	{ "id": "blog", "name": "블로그", "parentId": "projects", "order": 1 },
-	{ "id": "dev-notes", "name": "개발기록", "parentId": "blog", "order": 1 },
-	{ "id": "empty", "name": "다음 프로젝트", "parentId": "projects", "order": 2 }
+  {
+    "id": "security",
+    "name": "보안",
+    "order": 1
+  },
+  {
+    "id": "web-hacking",
+    "name": "웹해킹",
+    "parentId": "security",
+    "order": 1
+  },
+  {
+    "id": "knowledge",
+    "name": "지식",
+    "parentId": "web-hacking",
+    "order": 1
+  },
+  {
+    "id": "webhacking-kr",
+    "name": "webhacking.kr",
+    "parentId": "web-hacking",
+    "order": 1
+  },
+  {
+    "id": "conference",
+    "name": "컨퍼런스",
+    "parentId": "security",
+    "order": 1
+  },
+  {
+    "id": "standard",
+    "name": "표준",
+    "parentId": "security",
+    "order": 1
+  }
 ]
