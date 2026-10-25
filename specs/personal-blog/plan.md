@@ -2,6 +2,10 @@
 
 상태: 상세 설계 검토 후 확정하고 구현한 계획. 2026-10-23.
 
+## 후속 변경: 홈↔비홈 배너 기하 보간 (2026-10-25)
+
+READ-05는 이전 취소된 배너 위치/crop 수정과 별도의 사용자 승인이다. 기존 최종 transform·높이·이미지·설정은 그대로 둔다. Astra 승인 설계에 따라 content:replace에서 일반 nonhistory/nonhash/!reduced·desktop·home모드변경인 경우만 data-banner-motion을 opt-in하고 #banner-wrapper/#banner/#main-grid의 transform을700ms CSS 보간한다. 현재 #top-row와 wrapper/inner 높이는 홈/비홈에서 동일하여 height·전역transition-all을 추가하지 않는다. main incoming과 실제 생성된 CSSTransition(transform) 완료를 병행 await해 최신입력 버퍼를700ms전체에 유지한다. 동일값/미디어조건으로 transition이 없으면 즉시 완료하며 초기scale/opacity·자손호버는 대기 대상이 아니다. AbortError만 취소로 정리하고 abort/fail/disable도 opt-in과 해당모션을 해제한다. history/hash/reduced/mobile은 토글 전에 opt-in을 해제해 좌표복원·clamp를 보존한다. 기존dist 직접URL의 desktop/mobile 기하를 기준으로 기록한 뒤 실제게시빌드1회·필요check·중간transform/최종좌표·프로필opacity1·700ms중반rapid·history/lateimage/하단회귀를 Docker에서 확인한다. full3base/온라인감사/Git/원격게시 및 기존 사용자데이터 변경은 범위 밖이다.
+
 ## 후속 변경: 주본문 전용 전환 (2026-10-25)
 
 사용자가 READ-03의 무애니메이션 계약을 주본문200ms fade/16px 전환으로 변경했다. sidebar와 목차는 DOM 갱신하되 불투명·비변형 상태를 유지한다. READ-04의 visible smooth-top 뒤에 outgoing/incoming을 실행하며 history/hash/reduced-motion은 추가 모션을 생략한다. Astra 승인 설계에 따라 응답 준비 후 기존 DOM의 smooth-top을 기다리고 main 전용 WAAPI outgoing200ms를 await한다. outgoing fill은 교체까지 유지하며 교체 직후 공개 글 SSR 아카이브를 동기 필터한 뒤 incoming200ms를 실행하고 스타일을 해제한다. 후속 링크와 popstate의 단일 최신 입력 버퍼는 outgoing/incoming 전체까지 적용하며 abort/fail/disable에서는 모션과 버퍼를 정리한다. 아카이브는 tag OR·category AND·uncategorized·연도 숨김·개수를 유지하고 noscript 공개 목록을 제공한다. 사용자 이미지·프로필·글·배너 geometry와 자동 게시 정책은 변경하지 않는다. 관련 check·게시 준비 빌드1회·집중 Chromium(데스크톱/모바일·메뉴·하단링크·history·rapid·reduced)로 검증하고 개발 서버를 복원한다. Git/원격 실행과 전체3base 반복은 하지 않는다.

@@ -191,6 +191,13 @@ const bannerOffset =
 	.navbar-hidden {
 		@apply opacity-0 -translate-y-16
 	}
+	@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+		body[data-banner-motion] :is(#banner-wrapper, #banner, #main-grid) {
+			transition-property: transform;
+			transition-duration: 700ms;
+			transition-timing-function: ease;
+		}
+	}
 }
 </style>
 
@@ -392,6 +399,7 @@ const setup = () => {
 	let scrollingVisit = false;
 	let latestAction: (() => void) | undefined;
 	let activeTransition: Animation | undefined;
+	let activeLayoutTransitions: Animation[] = [];
 	const shouldTransition = (visit: {history: {popstate: boolean}; to: {hash?: string}}) =>
 		!visit.history.popstate && !visit.to.hash && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 	const transitionMain = async (incoming: boolean) => {
@@ -412,6 +420,32 @@ const setup = () => {
 			}
 		}
 	};
+	const updateBannerLayout = async (visit: Parameters<typeof shouldTransition>[0] & {to: {url: string}}) => {
+		const home = pathsEqual(visit.to.url, url('/'));
+		const elements = ['banner-wrapper', 'banner', 'main-grid']
+			.map((id) => document.getElementById(id)).filter((element): element is HTMLElement => !!element);
+		const animate = bannerEnabled && shouldTransition(visit) && window.innerWidth >= 1024 &&
+			document.body.classList.contains('lg:is-home') !== home;
+		if (animate) document.body.setAttribute('data-banner-motion', '');
+		else document.body.removeAttribute('data-banner-motion');
+		// Establish old transforms with the opt-in before changing the existing home state.
+		for (const element of elements) getComputedStyle(element).transform;
+		document.body.classList.toggle('lg:is-home', home);
+		const animations = animate ? elements.flatMap((element) => element.getAnimations().filter(
+			(animation) => animation instanceof CSSTransition && animation.transitionProperty === 'transform',
+		)) : [];
+		activeLayoutTransitions = animations;
+		try {
+			await Promise.all(animations.map((animation) => animation.finished.catch((error) => {
+				if (!(error instanceof DOMException && error.name === 'AbortError')) throw error;
+			})));
+		} finally {
+			if (activeLayoutTransitions === animations) {
+				activeLayoutTransitions = [];
+				document.body.removeAttribute('data-banner-motion');
+			}
+		}
+	};
 	const skipPopStateHandling = window.swup.options.skipPopStateHandling;
 	window.swup.options.skipPopStateHandling = (event) => {
 		if (skipPopStateHandling(event)) return true;
@@ -427,6 +461,9 @@ const setup = () => {
 	});
 	const clearPendingAction = () => {
 		activeTransition?.cancel();
+		for (const animation of activeLayoutTransitions) animation.cancel();
+		activeLayoutTransitions = [];
+		document.body.removeAttribute('data-banner-motion');
 		scrollingVisit = false;
 		latestAction = undefined;
 	};
@@ -466,10 +503,10 @@ const setup = () => {
 	});
 	window.swup.hooks.on('content:replace', async (visit) => {
 		// Keep the current layout intact until the next page is ready.
-		document.body.classList.toggle('lg:is-home', pathsEqual(visit.to.url, url('/')));
+		const layoutReady = updateBannerLayout(visit);
 		filterArchive(document, new URL(visit.to.url, location.href).search);
 		initCustomScrollbar();
-		if (shouldTransition(visit)) await transitionMain(true);
+		await Promise.all([layoutReady, shouldTransition(visit) ? transitionMain(true) : Promise.resolve()]);
 	});
 	window.swup.hooks.on('page:view', scrollFunction);
 }

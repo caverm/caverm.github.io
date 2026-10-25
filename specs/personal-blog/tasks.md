@@ -2,6 +2,20 @@
 
 기준 요구사항은 spec.md, 구현 방법은 plan.md를 참조한다. 2026-10-23 시작.
 
+## 후속 변경: 홈↔비홈 배너 기하 보간 (2026-10-25)
+
+- [x] B01: 현재/원본 CSS와 이동 순서를 읽고 READ-05·계획·Astra 설계 gate를 확정한다.
+- [x] B02: 기존 최종 기하를 기록하고 해당3요소 transform만700ms 보간한다.
+- [x] B03: 집중 기하·기존전환 회귀/check/게시빌드1회, 문서·개발서버·Astra 최종gate를 완료한다.
+
+설계 승인: #banner-wrapper/#banner/#main-grid transform만700ms, content:replace 토글 유지, main incoming 병행·실제CSSTransition만await, latestAction전체대기, history/hash/reduced/mobile추가모션없음. 배너높이·최종좌표·이미지·설정은 변경하지 않는다. Docker 엔진 정상이나 기존 개발컨테이너는 종료exit1 상태였다. 이전 취소된 crop/배너위치 수정은 재개하지 않는다.
+
+구현·검증: 제품변경은 Layout.astro의 해당3요소 transform opt-in/실제CSSTransition 대기·정리뿐이다. 기존dist 직접URL의 desktop/mobile8조합 기하를 artifacts/banner-slide-baseline.json/log에 기록한 뒤 비교했다. banner-slide-browser.log **exit0**: desktop 홈↔분류·아카이브·소개6이동의3요소중간transform과 약727~756ms관찰·기존최종좌표동일을 확인했고 reduced/mobile은중간기하0·sidebaropacity1이었다. banner-slide-rapid.log **exit0**: main incoming완료후350ms에 CSS슬라이드진행중 링크/BackForward양방향4입력의버퍼·최종기하동일을 확인했다. banner-slide-main-regression.log **exit0**: desktop/mobile메뉴·글·태그·페이지번호, 응답대기·main양방향fade, 하단smooth-top, delayed cover/avatar history좌표, scroll중7경쟁/outgoing·incoming4경쟁, reduced·crosspagehash·직행아카이브필터/JSoff를 보존했다.
+
+Docker Astro check64파일0error/0warning/0hint(banner-slide-check.log), 실제 SITE_URL=https://caverm.github.io BASE_PATH=/ 게시준비 **exit0**, job8341d779-e07c-4d9b-a232-8364f551cf69/38.237초/2809참조(banner-slide-publish.log). Astro/Pagefind실제빌드는1회였다. 초기검사harness의single-variable 선언formatter지적2개는 빌드진입전에 수정했다. 소유한새검사파일만formatter를 적용했고 관련단위코드변경이없어 이전24/24통과단위는 반복하지 않았다. 전체3base/fullverify·온라인감사·Git/원격게시·사용자데이터변경은 수행하지 않았다. 기존advisory잔여위험은 이번보간수정으로 해소됐다고보고하지 않는다.
+
+마무리: Astra 읽기전용 최종 기능 gate **APPROVED**, 추가수정/실행요청없음. Docker 개발서버는 기존127.0.0.1:4321로복원했고 Astro ready1976ms/watching 로그를 확인했다. 이전 종료exit1로그에는 ELIFECYCLE만있어 원인을단정하지않으며 현재복원은실제ready로확인했다. 이승인은 READ-05와 관련기존전환회귀범위이며 전체3base/온라인감사/기존advisory해소를뜻하지않는다.
+
 ## 후속 변경: 주본문 전용 fade/16px 전환 (2026-10-25)
 
 - [x] M01: demo 동작·현재 Swup 순서·아카이브 렌더 경계를 읽고 Astra 설계 gate를 확정한다.
