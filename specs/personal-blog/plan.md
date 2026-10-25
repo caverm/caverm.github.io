@@ -2,6 +2,10 @@
 
 상태: 상세 설계 검토 후 확정하고 구현한 계획. 2026-10-23.
 
+## 후속 변경: 주본문 전용 전환 (2026-10-25)
+
+사용자가 READ-03의 무애니메이션 계약을 주본문200ms fade/16px 전환으로 변경했다. sidebar와 목차는 DOM 갱신하되 불투명·비변형 상태를 유지한다. READ-04의 visible smooth-top 뒤에 outgoing/incoming을 실행하며 history/hash/reduced-motion은 추가 모션을 생략한다. Astra 승인 설계에 따라 응답 준비 후 기존 DOM의 smooth-top을 기다리고 main 전용 WAAPI outgoing200ms를 await한다. outgoing fill은 교체까지 유지하며 교체 직후 공개 글 SSR 아카이브를 동기 필터한 뒤 incoming200ms를 실행하고 스타일을 해제한다. 후속 링크와 popstate의 단일 최신 입력 버퍼는 outgoing/incoming 전체까지 적용하며 abort/fail/disable에서는 모션과 버퍼를 정리한다. 아카이브는 tag OR·category AND·uncategorized·연도 숨김·개수를 유지하고 noscript 공개 목록을 제공한다. 사용자 이미지·프로필·글·배너 geometry와 자동 게시 정책은 변경하지 않는다. 관련 check·게시 준비 빌드1회·집중 Chromium(데스크톱/모바일·메뉴·하단링크·history·rapid·reduced)로 검증하고 개발 서버를 복원한다. Git/원격 실행과 전체3base 반복은 하지 않는다.
+
 ## 후속 정책 변경: main 자동 게시와 수동 개발 검사 (2026-10-25)
 
 사용자가 전체 브라우저/개발 검사를 자동 게시 조건에서 분리하고 main push의 검증 성공 후 자동 배포를 명시 승인했다. 기존 Docker·전체 verify·테스트 파일과 CMS의 verify.yml/publish 호출은 유지한다. verify.yml은 source 입력과 공유 오프라인 보안 경계→기존 CMS/카테고리 및 실제 site/base Astro·Pagefind 빌드→일반 정적 canonical/링크/이미지/RSS/sitemap/실제 draft 제외의 게시 준비 경로를 사용한다. 고정 글·예시 이름·fixture 개수를 요구하는 검사는 기존 full 경로에만 둔다. 실제 draft는 설치된 Astro의 기존 frontmatter 파서와 같은 slug 규칙으로 읽어 별도 공개 manifest 없이 확인한다. 온라인 감사 대신 기존 Zod/JSX/이미지 전제 guard는 빌드 전에 오프라인으로 강제한다.

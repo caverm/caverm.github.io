@@ -205,6 +205,7 @@ import {
 } from 'overlayscrollbars';
 import {getHue, getStoredTheme, setHue, setTheme} from "../utils/setting-utils";
 import {pathsEqual, url} from "../utils/url-utils";
+import {filterArchive} from "../utils/archive-filter";
 import {
 	BANNER_HEIGHT,
 	BANNER_HEIGHT_HOME,
@@ -370,6 +371,7 @@ function init() {
 	loadHue();
 	initCustomScrollbar();
 	showBanner();
+	filterArchive(document, location.search);
 }
 
 /* Load settings when entering the site */
@@ -377,7 +379,7 @@ init();
 
 const setup = () => {
 	if (!window.swup.findPlugin('SwupScrollPlugin')) {
-		// Enable cached history restoration; animationClass:false still prevents page animations.
+		// Keep cached history restoration independent of the main-only WAAPI transition.
 		window.swup.options.animateHistoryBrowsing = true;
 		window.swup.use(new SwupScrollPlugin({ animateScroll: {
 			betweenPages: false,
@@ -385,10 +387,31 @@ const setup = () => {
 			samePage: false,
 		} }));
 	}
-	// Hold one latest action while the old page scrolls. Swup otherwise ignores a
+	// Hold one latest action throughout scrolling and both main transitions. Swup otherwise ignores a
 	// Forward back to the active URL while an earlier Back remains queued.
 	let scrollingVisit = false;
 	let latestAction: (() => void) | undefined;
+	let activeTransition: Animation | undefined;
+	const shouldTransition = (visit: {history: {popstate: boolean}; to: {hash?: string}}) =>
+		!visit.history.popstate && !visit.to.hash && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+	const transitionMain = async (incoming: boolean) => {
+		activeTransition?.cancel();
+		const main = document.querySelector('main');
+		if (!main) return;
+		const shown = {opacity: 1, transform: 'translateY(0px)'};
+		const hidden = {opacity: 0, transform: 'translateY(16px)'};
+		const animation = main.animate(incoming ? [hidden, shown] : [shown, hidden], {duration: 200, easing: 'ease', fill: 'both'});
+		activeTransition = animation;
+		try { await animation.finished; }
+		catch (error) { if (!(error instanceof DOMException && error.name === 'AbortError')) throw error; }
+		finally {
+			// Keep outgoing at opacity zero until replacement; incoming releases its styles.
+			if (incoming) {
+				animation.cancel();
+				if (activeTransition === animation) activeTransition = undefined;
+			}
+		}
+	};
 	const skipPopStateHandling = window.swup.options.skipPopStateHandling;
 	window.swup.options.skipPopStateHandling = (event) => {
 		if (skipPopStateHandling(event)) return true;
@@ -403,6 +426,7 @@ const setup = () => {
 		latestAction = () => { defaultHandler(visit, args); };
 	});
 	const clearPendingAction = () => {
+		activeTransition?.cancel();
 		scrollingVisit = false;
 		latestAction = undefined;
 	};
@@ -418,9 +442,13 @@ const setup = () => {
 		window.swup.options.skipPopStateHandling = skipPopStateHandling;
 	});
 	window.swup.hooks.before('content:replace', async (visit) => {
+		if (shouldTransition(visit)) scrollingVisit = true;
 		if (visit.history.popstate || visit.to.hash || !visit.scroll.reset ||
 			!(visit.trigger.el instanceof HTMLAnchorElement) || window.scrollY <= 1 ||
-			window.matchMedia('(prefers-reduced-motion: reduce)').matches || !window.swup.scrollTo) return;
+			window.matchMedia('(prefers-reduced-motion: reduce)').matches || !window.swup.scrollTo) {
+			if (shouldTransition(visit)) await transitionMain(false);
+			return;
+		}
 
 		// The old page stays tall enough to scroll; visit:start already cached its original position.
 		// Subsequent link/history actions wait until this visit ends, preserving the latest input.
@@ -434,11 +462,14 @@ const setup = () => {
 		} finally {
 			window.swup.hooks.off('scroll:end', complete);
 		}
+		if (shouldTransition(visit)) await transitionMain(false);
 	});
-	window.swup.hooks.on('content:replace', (visit: {to: {url: string}}) => {
+	window.swup.hooks.on('content:replace', async (visit) => {
 		// Keep the current layout intact until the next page is ready.
 		document.body.classList.toggle('lg:is-home', pathsEqual(visit.to.url, url('/')));
+		filterArchive(document, new URL(visit.to.url, location.href).search);
 		initCustomScrollbar();
+		if (shouldTransition(visit)) await transitionMain(true);
 	});
 	window.swup.hooks.on('page:view', scrollFunction);
 }

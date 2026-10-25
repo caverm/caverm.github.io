@@ -88,8 +88,8 @@ test("Zod risk boundary rejects removed early guards and added input paths", () 
 		tagsSchema,
 		maxTags: MAX_POST_TAGS,
 		entryPoints: {
-			build: readFileSync("scripts/build.mjs", "utf8"),
-			verify: readFileSync("scripts/verify.mjs", "utf8"),
+			build: readFileSync("scripts/build.mjs", "utf8").replace(/\r\n/g, "\n"),
+			verify: readFileSync("scripts/verify.mjs", "utf8").replace(/\r\n/g, "\n"),
 		},
 	};
 	assert.doesNotThrow(() => assertZodContentBoundary(safe));
@@ -211,11 +211,17 @@ test("Zod risk boundary rejects removed early guards and added input paths", () 
 		{ ...safe, maxTags: 65 },
 		{ ...safe, tagsSchema: { safeParse: () => ({ success: true }) } },
 	];
-	for (const changed of bad)
+	for (const changed of bad) {
+		assert.notDeepEqual(
+			changed,
+			safe,
+			"negative boundary fixture must change its input",
+		);
 		assert.throws(
 			() => assertZodContentBoundary(changed),
 			/AUDIT_ZOD_BOUNDARY/,
 		);
+	}
 	const directory = mkdtempSync(path.join(tmpdir(), "audit-inputs-"));
 	try {
 		for (const extension of ["mts", "cts", "cjs", "MTS"]) {

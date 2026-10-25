@@ -1,18 +1,9 @@
 <script lang="ts">
-import { onMount } from "svelte";
-
 import I18nKey from "../i18n/i18nKey";
 import { i18n } from "../i18n/translation";
 import { getPostUrlBySlug } from "../utils/url-utils";
 
-export let tags: string[] = [];
-export let categories: string[] = [];
 export let sortedPosts: Post[] = [];
-
-const params = new URLSearchParams(window.location.search);
-tags = params.has("tag") ? params.getAll("tag") : [];
-categories = params.has("category") ? params.getAll("category") : [];
-const uncategorized = params.get("uncategorized");
 
 interface Post {
 	slug: string;
@@ -29,8 +20,6 @@ interface Group {
 	posts: Post[];
 }
 
-let groups: Group[] = [];
-
 function formatDate(date: Date) {
 	const month = (date.getMonth() + 1).toString().padStart(2, "0");
 	const day = date.getDate().toString().padStart(2, "0");
@@ -41,29 +30,7 @@ function formatTag(tagList: string[]) {
 	return tagList.map((t) => `#${t}`).join(" ");
 }
 
-onMount(async () => {
-	let filteredPosts: Post[] = sortedPosts;
-
-	if (tags.length > 0) {
-		filteredPosts = filteredPosts.filter(
-			(post) =>
-				Array.isArray(post.data.tags) &&
-				post.data.tags.some((tag) => tags.includes(tag)),
-		);
-	}
-
-	if (categories.length > 0) {
-		filteredPosts = filteredPosts.filter(
-			(post) =>
-				post.data.categoryId && categories.includes(post.data.categoryId),
-		);
-	}
-
-	if (uncategorized) {
-		filteredPosts = filteredPosts.filter((post) => !post.data.categoryId);
-	}
-
-	const grouped = filteredPosts.reduce(
+	const grouped = sortedPosts.reduce(
 		(acc, post) => {
 			const year = post.data.published.getFullYear();
 			if (!acc[year]) {
@@ -82,13 +49,12 @@ onMount(async () => {
 
 	groupedPostsArray.sort((a, b) => b.year - a.year);
 
-	groups = groupedPostsArray;
-});
+	const groups: Group[] = groupedPostsArray;
 </script>
 
-<div class="card-base px-8 py-6">
+<div id="archive-panel" class="card-base px-8 py-6" style="visibility: hidden">
     {#each groups as group}
-        <div>
+        <div data-archive-year>
             <div class="flex flex-row w-full items-center h-[3.75rem]">
                 <div class="w-[15%] md:w-[10%] transition text-2xl font-bold text-right text-75">
                     {group.year}
@@ -99,13 +65,14 @@ onMount(async () => {
                   -outline-offset-[2px] z-50 outline-3"
                     ></div>
                 </div>
-                <div class="w-[70%] md:w-[80%] transition text-left text-50">
+                <div data-archive-count data-singular={i18n(I18nKey.postCount)} data-plural={i18n(I18nKey.postsCount)} class="w-[70%] md:w-[80%] transition text-left text-50">
                     {group.posts.length} {i18n(group.posts.length === 1 ? I18nKey.postCount : I18nKey.postsCount)}
                 </div>
             </div>
 
             {#each group.posts as post}
                 <a
+                        data-archive-post data-tags={JSON.stringify(post.data.tags)} data-category={post.data.categoryId || ''}
                         href={getPostUrlBySlug(post.slug)}
                         aria-label={post.data.title}
                         class="group btn-plain !block h-10 w-full rounded-lg hover:text-[initial]"

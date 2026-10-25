@@ -5,7 +5,7 @@ import { createServer } from "node:http";
 import path from "node:path";
 import { chromium } from "@playwright/test";
 
-async function navigateWithoutPageMotion(
+async function navigateWithMainTransition(
 	page,
 	link,
 	destination,
@@ -31,15 +31,28 @@ async function navigateWithoutPageMotion(
 	await page.route(responseUrl.href, holdResponse);
 	await page.evaluate(() => {
 		window.swup.cache.clear();
-		const probe = { samples: [], replaced: false };
+		const probe = {
+			samples: [],
+			replaced: false,
+			oldMain: document.querySelector("main"),
+		};
 		const sample = (phase) => {
-			const elements = ["main", "#sidebar", "#content-wrapper", "#toc"]
+			const elements = ["#sidebar", "#toc"]
 				.map((selector) => document.querySelector(selector))
 				.filter(Boolean);
 			probe.samples.push({
 				phase,
 				y: window.scrollY,
 				time: performance.now(),
+				mainOpacity: Number(
+					getComputedStyle(document.querySelector("main")).opacity,
+				),
+				mainY: new DOMMatrixReadOnly(
+					getComputedStyle(document.querySelector("main")).transform,
+				).m42,
+				archiveReady:
+					!document.querySelector("#archive-panel") ||
+					document.querySelector("#archive-panel").dataset.ready === "true",
 				visible: elements.every((element) => {
 					const style = getComputedStyle(element);
 					return (
@@ -74,7 +87,11 @@ async function navigateWithoutPageMotion(
 		window.swup.hooks.on("visit:start", probe.onStart);
 		window.swup.hooks.on("content:replace", probe.onReplace);
 		const frame = () => {
-			sample(probe.replaced ? "new-frame" : "old-frame");
+			sample(
+				document.querySelector("main") !== probe.oldMain
+					? "new-frame"
+					: "old-frame",
+			);
 			probe.frame = requestAnimationFrame(frame);
 		};
 		frame();
@@ -97,6 +114,14 @@ async function navigateWithoutPageMotion(
 		// Exceed the former outgoing fade duration while the real response is held.
 		await page.waitForTimeout(300);
 		assert.equal(await page.locator("main").textContent(), previousContent);
+		assert(
+			await page.evaluate(() =>
+				window.navigationMotionProbe.samples.every(
+					(sample) => sample.mainOpacity === 1 && sample.mainY === 0,
+				),
+			),
+			"old main remains fully visible and stationary while response is pending",
+		);
 		assert.equal(
 			await page.evaluate(() =>
 				window.navigationMotionProbe.samples.every((sample) => sample.visible),
@@ -119,12 +144,57 @@ async function navigateWithoutPageMotion(
 		assert(samples.some((sample) => sample.phase === "new-frame"));
 		assert(
 			samples.every((sample) => sample.visible),
-			"new content is immediately visible",
+			"sidebar and TOC stay visible throughout the main transition",
 		);
 		assert.deepEqual(
 			[...new Set(samples.flatMap((sample) => sample.animations))],
 			[],
-			"navigation does not animate the page or replaced content",
+			"sidebar and TOC have no entry animations",
+		);
+		const reduced = await page.evaluate(
+			() => matchMedia("(prefers-reduced-motion: reduce)").matches,
+		);
+		const movingMain = samples.filter(
+			(sample) =>
+				sample.mainOpacity > 0.01 &&
+				sample.mainOpacity < 0.99 &&
+				sample.mainY > 0.1 &&
+				sample.mainY <= 16,
+		);
+		if (reduced || new URL(destination).hash) {
+			assert.equal(
+				movingMain.length,
+				0,
+				"reduced motion and hash visits skip main transitions",
+			);
+		} else {
+			assert(
+				movingMain.some((sample) => sample.phase === "old-frame"),
+				"outgoing main fades and moves down",
+			);
+			assert(
+				movingMain.some((sample) => sample.phase === "new-frame"),
+				"incoming main fades and moves up",
+			);
+		}
+		assert(
+			samples
+				.filter((sample) => sample.phase === "new-frame")
+				.every((sample) => sample.archiveReady),
+			"archive is filtered and rendered before its first incoming frame",
+		);
+		assert(
+			samples
+				.filter((sample) => sample.y > 1 && sample.phase === "old-frame")
+				.every((sample) => sample.mainOpacity === 1),
+			"old main remains visible during smooth scroll",
+		);
+		assert.equal(
+			await page
+				.locator("main")
+				.evaluate((element) => getComputedStyle(element).transform),
+			"none",
+			"main transition leaves no transform",
 		);
 		assert.notEqual(await page.locator("main").textContent(), previousContent);
 		const navigationStart = await page.evaluate(
@@ -181,7 +251,7 @@ async function navigateWithoutPageMotion(
 				hash: new URL(destination).hash,
 				frames: samples.length,
 				pendingResponseMs: 300,
-				firstReplacementVisible: true,
+				sidebarAlwaysVisible: true,
 				intermediateScrollFrames: samples.filter(
 					(sample) =>
 						sample.phase === "old-frame" &&
@@ -274,7 +344,7 @@ async function checkLowerLinkScrolling(page, origin, base) {
 				"Cover and profile must have rendered HTTP(S) image sources",
 			);
 			const imageUrls = new Set(renderedImages);
-			await navigateWithoutPageMotion(page, link, destination);
+			await navigateWithMainTransition(page, link, destination);
 			const imagePattern = (url) => imageUrls.has(url.href);
 			let releaseImage;
 			const imageGate = new Promise((resolve) => {
@@ -389,7 +459,7 @@ async function checkLowerLinkScrolling(page, origin, base) {
 	await page.goto(home, { waitUntil: "networkidle" });
 	const reducedTag = page.locator(`#tags a[href="${base}archive/?tag=ICS"]`);
 	await reducedTag.scrollIntoViewIfNeeded();
-	await navigateWithoutPageMotion(page, reducedTag, archive, true);
+	await navigateWithMainTransition(page, reducedTag, archive, true);
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await page.setViewportSize({ width: 1440, height: 1000 });
 }
@@ -452,7 +522,10 @@ async function checkScrollInterruptions(page, origin, base) {
 			await page
 				.locator(`main a[href="${base}posts/ot-ics-learning/"]`)
 				.waitFor();
-			assert.equal(await page.locator('main a[href*="/posts/"]').count(), 1);
+			assert.equal(
+				await page.locator('main a[href*="/posts/"]:visible').count(),
+				1,
+			);
 		}
 		if (destination === home)
 			await page.waitForFunction(
@@ -471,7 +544,10 @@ async function checkScrollInterruptions(page, origin, base) {
 			await page.evaluate(() => history.back());
 			await page.waitForURL(archive);
 			await page.waitForFunction(() => !window.swup.navigating);
-			assert.equal(await page.locator('main a[href*="/posts/"]').count(), 1);
+			assert.equal(
+				await page.locator('main a[href*="/posts/"]:visible').count(),
+				1,
+			);
 			assert.equal(await page.evaluate(() => history.state.index), index);
 			await page.evaluate(() => history.forward());
 			await page.waitForURL(`${origin}${base}posts/ot-ics-learning/`);
@@ -497,6 +573,152 @@ async function checkScrollInterruptions(page, origin, base) {
 		);
 	}
 	await page.setViewportSize({ width: 1440, height: 1000 });
+}
+
+async function checkArchiveQueries(page, origin, base) {
+	await page.addInitScript(() => {
+		const observer = new MutationObserver(() => {
+			const panel = document.querySelector("#archive-panel");
+			if (!panel || getComputedStyle(panel).visibility !== "visible") return;
+			window.archiveFirstVisible = {
+				ready: panel.dataset.ready,
+				hidden: [...panel.querySelectorAll("[data-archive-post]")].map(
+					(row) => row.hidden,
+				),
+			};
+			observer.disconnect();
+		});
+		observer.observe(document, {
+			subtree: true,
+			childList: true,
+			attributes: true,
+		});
+	});
+	for (const query of [
+		"?tag=ICS",
+		"?tag=missing",
+		"?tag=ICS&tag=운영체제",
+		"?category=nuclear-security&category=computer-science&tag=ICS",
+		"?uncategorized=1",
+	]) {
+		await page.goto(`${origin}${base}archive/${query}`, {
+			waitUntil: "networkidle",
+		});
+		const result = await page.evaluate(() => {
+			const params = new URLSearchParams(location.search);
+			const tags = params.getAll("tag");
+			const categories = params.getAll("category");
+			const panel = document.querySelector("#archive-panel");
+			const rows = [...panel.querySelectorAll("[data-archive-post]")];
+			return {
+				ready: panel.dataset.ready,
+				firstVisible:
+					window.archiveFirstVisible?.ready === "true" &&
+					JSON.stringify(window.archiveFirstVisible.hidden) ===
+						JSON.stringify(rows.map((row) => row.hidden)),
+				correct: rows.every((row) => {
+					const matches =
+						(!tags.length ||
+							JSON.parse(row.dataset.tags).some((tag) => tags.includes(tag))) &&
+						(!categories.length || categories.includes(row.dataset.category)) &&
+						(!params.get("uncategorized") || !row.dataset.category);
+					return (
+						row.hidden === !matches &&
+						(getComputedStyle(row).display !== "none") === matches
+					);
+				}),
+				years: [...panel.querySelectorAll("[data-archive-year]")].every(
+					(year) =>
+						year.hidden ===
+						![...year.querySelectorAll("[data-archive-post]")].some(
+							(row) => !row.hidden,
+						),
+				),
+			};
+		});
+		assert.deepEqual(result, {
+			ready: "true",
+			firstVisible: true,
+			correct: true,
+			years: true,
+		});
+	}
+	const noJs = await page
+		.context()
+		.browser()
+		.newContext({ javaScriptEnabled: false });
+	try {
+		const noJsPage = await noJs.newPage();
+		await noJsPage.goto(`${origin}${base}archive/`);
+		assert(
+			(await noJsPage
+				.locator("#archive-panel [data-archive-post]:visible")
+				.count()) > 0,
+			"SSR public archive remains available without JavaScript",
+		);
+	} finally {
+		await noJs.close();
+	}
+	console.log(
+		"Archive direct queries passed: OR tags, AND categories, uncategorized, zero results and years.",
+	);
+}
+
+async function checkTransitionInterruptions(page, origin, base) {
+	for (const phase of ["outgoing", "incoming"]) {
+		for (const action of ["link", "back-forward"]) {
+			await page.goto(`${origin}${base}`, { waitUntil: "networkidle" });
+			await page.evaluate((base) => {
+				window.transitionOldMain = document.querySelector("main");
+				document.querySelector(`a[href="${base}archive/"]`).click();
+			}, base);
+			await page.waitForFunction(
+				(phase) => {
+					const main = document.querySelector("main");
+					return (
+						(main === window.transitionOldMain) === (phase === "outgoing") &&
+						main
+							.getAnimations()
+							.some((animation) => animation.playState === "running")
+					);
+				},
+				phase,
+				{ polling: "raf" },
+			);
+			if (action === "link") {
+				await page.evaluate(
+					(base) => document.querySelector(`a[href="${base}about/"]`).click(),
+					base,
+				);
+				await page.waitForURL(`${origin}${base}about/`);
+			} else {
+				await page.evaluate(() => history.back());
+				await page.waitForURL(`${origin}${base}`);
+				await page.evaluate(() => history.forward());
+				await page.waitForURL(`${origin}${base}archive/`);
+			}
+			await page.waitForFunction(() => !window.swup.navigating);
+			if (action === "link") assert(await page.locator("main").textContent());
+			else
+				assert.equal(
+					await page.locator("#archive-panel").getAttribute("data-ready"),
+					"true",
+				);
+			assert.equal(
+				await page
+					.locator("main")
+					.evaluate((main) => getComputedStyle(main).opacity),
+				"1",
+			);
+			console.log(
+				JSON.stringify({
+					event: "navigation.transition.interruption.passed",
+					phase,
+					action,
+				}),
+			);
+		}
+	}
 }
 
 async function settleForScreenshot(page) {
@@ -568,11 +790,14 @@ const browser = await chromium.launch({
 	headless: true,
 	args: ["--no-sandbox"],
 });
+const motionOnly = process.argv.includes("--motion-only");
 try {
-	for (const [directory, base] of [
-		["dist-root", "/"],
-		["dist", "/blog/"],
-	]) {
+	for (const [directory, base] of motionOnly
+		? [["dist", "/"]]
+		: [
+				["dist-root", "/"],
+				["dist", "/blog/"],
+			]) {
 		const root = path.resolve(directory);
 		const server = createServer((request, response) => {
 			const pathname = decodeURIComponent(
@@ -624,6 +849,86 @@ try {
 				failedRequests.push(`${response.status()} ${response.url()}`);
 		});
 		try {
+			if (motionOnly) {
+				await checkArchiveQueries(page, origin, base);
+				for (const width of [1440, 390]) {
+					await page.setViewportSize({ width, height: 1000 });
+					await page.goto(`${origin}${base}`, { waitUntil: "networkidle" });
+					for (const route of ["categories/", "archive/", "about/", ""]) {
+						if (width === 390 && route)
+							await page.locator("#nav-menu-switch").click();
+						await navigateWithMainTransition(
+							page,
+							page
+								.locator(
+									width === 390 && route
+										? `#nav-menu-panel a[href="${base}${route}"]`
+										: `a[href="${base}${route}"]:visible`,
+								)
+								.first(),
+							`${origin}${base}${route}`,
+						);
+					}
+					const post = page.locator('main a[href*="/posts/"]').first();
+					await navigateWithMainTransition(
+						page,
+						post,
+						new URL(await post.getAttribute("href"), origin).href,
+					);
+					await page.goBack({ waitUntil: "networkidle" });
+					await page.waitForFunction(() => !window.swup.navigating);
+					await page.screenshot({
+						path: `artifacts/screenshots/main-transition-${width}.png`,
+					});
+				}
+				await checkLowerLinkScrolling(page, origin, base);
+				await checkScrollInterruptions(page, origin, base);
+				await checkTransitionInterruptions(page, origin, base);
+				await page.goto(`${origin}${base}`, { waitUntil: "networkidle" });
+				const pagination = page.locator('main a[aria-label="Page 2"]');
+				await navigateWithMainTransition(
+					page,
+					pagination,
+					new URL(await pagination.getAttribute("href"), origin).href,
+				);
+				await page.goto(`${origin}${base}posts/deep-code/`, {
+					waitUntil: "networkidle",
+				});
+				const crossHash = await page
+					.locator('#toc a[href^="#"]')
+					.first()
+					.getAttribute("href");
+				await page.goto(`${origin}${base}`, { waitUntil: "networkidle" });
+				const hashLink = page
+					.locator(`main a[href^="${base}posts/deep-code/"]`)
+					.first();
+				await hashLink.evaluate((link, hash) => {
+					link.hash = hash;
+					link.dataset.motionHashLink = "true";
+				}, crossHash);
+				await navigateWithMainTransition(
+					page,
+					page.locator('[data-motion-hash-link="true"]'),
+					`${origin}${base}posts/deep-code/${crossHash}`,
+					true,
+				);
+				await page.waitForFunction(() => {
+					const heading = document.getElementById(
+						decodeURIComponent(location.hash.slice(1)),
+					);
+					return (
+						heading &&
+						heading.getBoundingClientRect().top >= 0 &&
+						heading.getBoundingClientRect().top < innerHeight
+					);
+				});
+				assert.deepEqual(errors, [], "browser exceptions");
+				assert.deepEqual(failedRequests, [], "failed assets/search requests");
+				console.log(
+					"Focused main transitions passed: desktop/mobile, menus/post, lower links/history/images, rapid actions, reduced motion.",
+				);
+				continue;
+			}
 			await checkLowerLinkScrolling(page, origin, base);
 			await checkScrollInterruptions(page, origin, base);
 			await page.goto(`${origin}${base}`, { waitUntil: "networkidle" });
@@ -632,7 +937,7 @@ try {
 				(await page.locator('main a[href*="/posts/"]').count()) > 0,
 				true,
 			);
-			await navigateWithoutPageMotion(
+			await navigateWithMainTransition(
 				page,
 				page.locator('a[aria-label="Page 2"]'),
 				`${origin}${base}2/`,
@@ -659,7 +964,7 @@ try {
 			);
 			await page.evaluate(() => window.scrollTo(0, 400));
 			const categoryScroll = await page.evaluate(() => window.scrollY);
-			await navigateWithoutPageMotion(
+			await navigateWithMainTransition(
 				page,
 				page.locator('[data-category-id="web-hacking"]'),
 				`${origin}${base}categories/web-hacking/`,
@@ -693,7 +998,7 @@ try {
 			});
 			assert.match(await page.locator("main").innerText(), /0개의 글/);
 			await page.goto(`${origin}${base}`, { waitUntil: "networkidle" });
-			await navigateWithoutPageMotion(
+			await navigateWithMainTransition(
 				page,
 				page.locator(`main a[href="${base}posts/deep-code/"]`).first(),
 				`${origin}${base}posts/deep-code/`,
@@ -741,7 +1046,7 @@ try {
 				link.dataset.motionHashLink = "true";
 			}, crossPageHash);
 			const stableHashLink = page.locator('[data-motion-hash-link="true"]');
-			await navigateWithoutPageMotion(
+			await navigateWithMainTransition(
 				page,
 				stableHashLink,
 				`${origin}${base}posts/deep-code/${crossPageHash}`,
@@ -807,7 +1112,10 @@ try {
 				{ waitUntil: "networkidle" },
 			);
 			await page.locator('main a[href*="/posts/reading-notes/"]').waitFor();
-			assert.equal(await page.locator('main a[href*="/posts/"]').count(), 1);
+			assert.equal(
+				await page.locator('main a[href*="/posts/"]:visible').count(),
+				1,
+			);
 			const expectedAbout = await page.evaluate(
 				(html) => {
 					const document = new DOMParser().parseFromString(html, "text/html");
@@ -822,7 +1130,7 @@ try {
 				expectedAbout.length > 0,
 				"Built about page has a nonempty Markdown body",
 			);
-			await navigateWithoutPageMotion(
+			await navigateWithMainTransition(
 				page,
 				page.locator(`#navbar a[href="${base}about/"]`).first(),
 				`${origin}${base}about/`,
@@ -884,7 +1192,7 @@ try {
 			await page
 				.locator('#nav-menu-panel a[href$="/categories/"]')
 				.waitFor({ state: "visible" });
-			await navigateWithoutPageMotion(
+			await navigateWithMainTransition(
 				page,
 				page.locator('#nav-menu-panel a[href$="/categories/"]'),
 				`${origin}${base}categories/`,
@@ -902,7 +1210,7 @@ try {
 			);
 			if ((await ctfWebToggle.getAttribute("aria-expanded")) === "false")
 				await ctfWebToggle.click();
-			await navigateWithoutPageMotion(
+			await navigateWithMainTransition(
 				page,
 				page.locator('[data-category-id="ctf-notes"]'),
 				`${origin}${base}categories/ctf-notes/`,

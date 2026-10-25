@@ -2,6 +2,22 @@
 
 기준 요구사항은 spec.md, 구현 방법은 plan.md를 참조한다. 2026-10-23 시작.
 
+## 후속 변경: 주본문 전용 fade/16px 전환 (2026-10-25)
+
+- [x] M01: demo 동작·현재 Swup 순서·아카이브 렌더 경계를 읽고 Astra 설계 gate를 확정한다.
+- [x] M02: main 전환과 아카이브 본문 준비를 구현하고 sidebar 비애니메이션 회귀를 갱신한다.
+- [x] M03: 관련 check·게시 준비 빌드·집중 브라우저를 검증하고 문서·개발 서버를 복원한다.
+
+새 명시 요구로 이전 READ-03 계약을 교체한다. 취소된 배너 위치 수정은 재개하지 않으며 사용자 설정·사진·글과 이전 게시 정책은 유지한다. 기존 실패·완료 기록은 이력으로 보존한다. Docker Chromium의 실제 demo Home→Archive는32프레임 중 main 중간 opacity21프레임, sidebar 숨김0프레임이었다(`artifacts/demo-motion.json`, `demo-motion.log`).
+
+구현: Astra 승인 설계에 따라 main 전용 WAAPI200ms/16px outgoing→교체→incoming과 전환 전체 최신 입력 버퍼를 적용했다. outgoing fill은 DOM 교체까지 유지하고 incoming 완료·실패·abort·disable에서 정리한다. 아카이브는 공개 글 SSR+초기/교체 동기 query 필터로 준비하며 noscript 공개 목록을 제공한다. tag OR/category AND/uncategorized/개수/연도 숨김을 보존했다.
+
+검증 중 발견한 기존 실패: 단위23개 중 audit-policy negative1개는 CRLF 파일에서 LF 문자열 치환이 무변경이 되어 발생했다(artifacts/main-transition-unit.log). 보안 정책은 유지하고 fixture 읽기 EOL만 정규화했으며 각 negative 입력이 safe와 실제로 다른지도 검사한다. 최종 단위24/24와 Astro64파일0error/0warning/0hint(artifacts/main-transition-unit-final.log, main-transition-check-final.log). 모바일 브라우저 첫 시도는 숨긴 데스크톱 링크 클릭의 harness timeout이었고 실제 모바일 메뉴를 여는 방식으로 수정했다(main-transition-browser-first-failure.log).
+
+최종 검증(2026-10-25): Docker 실제 SITE_URL=https://caverm.github.io BASE_PATH=/ 게시 준비 검사 exit0, job9db30c34-3ea4-4c70-aac0-3381090d0836/43.629초/일반 로컬 참조2809개(artifacts/main-transition-publish.log). 실제 Astro/Pagefind 빌드는1회다. 집중 Chromium 최종 exit0(main-transition-browser-final.log): desktop/mobile 일반 홈·카테고리·아카이브·소개·글·페이지번호·태그, 응답300ms 보류 중 old main opacity1/무변형, main 양방향200ms/16px·sidebar/TOC항상가시/무등장효과, 기존하단smooth-top, delayed cover/avatar history좌표, scroll중7경쟁과 outgoing/incoming중 link/BackForward4경쟁, reduced-motion·cross-page hash 위치를 확인했다. 아카이브 직행 query의 첫 가시 snapshot과 tag OR/category AND/uncategorized/0건·연도숨김, JavaScript없는 SSR공개목록도 통과했다. 소유파일4개 formatter와 최종 check·unit을 통과했고 전체3base/full verify·온라인감사·Git·원격배포는 재실행하지 않았다. Docker 개발 서버는 기존127.0.0.1:4321로 복원했고 Astro ready2777ms/watching 로그를 확인했다. 기존 보안 감사 잔여 위험은 이번 범위에서 해소됐다고 주장하지 않는다. 캡처는 artifacts/screenshots/main-transition-1440.png, main-transition-390.png다.
+
+최종 Astra 읽기 전용 기능 gate는 **APPROVED**다. 최종 로그·타입·단위·게시 산출물과 desktop/mobile 캡처2장을 대조했고 추가 수정 요청은 없었다. 승인 범위는 이번 main 전환/아카이브 준비 기능이며 미실행 전체 검사나 기존 advisory 해소를 뜻하지 않는다.
+
 ## 후속 정책 변경: 게시 준비 검사와 수동 전체 검사 (2026-10-25)
 
 - [x] P01: 사용자 승인 범위와 기존 workflow/build/CMS/산출물 검사를 읽고 PUB-02/CMS-09 계약·계획을 갱신한다.
