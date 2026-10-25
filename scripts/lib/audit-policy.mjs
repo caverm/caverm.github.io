@@ -55,6 +55,10 @@ export function assertZodContentBoundary({
 		packageData.scripts?.precheck !== "node scripts/security.mjs" ||
 		packageData.scripts?.predev !== "node scripts/security.mjs" ||
 		!entryPoints?.build.includes('import "./security.mjs"') ||
+		!entryPoints?.build.includes('"scripts/check-build-boundaries.mjs"') ||
+		!/^for\s*\(const args of\s*\[\s*\[\s*"exec",\s*"node",\s*"--experimental-strip-types",\s*"scripts\/check-build-boundaries\.mjs"\s*,?\s*\]/m.test(
+			entryPoints?.build || "",
+		) ||
 		!entryPoints?.verify.includes(
 			'step("source-input-limits", ["exec", "node", "scripts/security.mjs"])',
 		) ||

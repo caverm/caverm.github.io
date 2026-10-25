@@ -28,9 +28,7 @@ jobs:
         run: docker compose build
       - name: Install frozen dependencies as nonroot user
         run: docker compose run --rm blog pnpm install --frozen-lockfile
-      - name: Same verification as local Docker
-        run: docker compose run --rm blog pnpm verify
-      - name: Build repository-specific Pages artifact
+      - name: Check and build the repository-specific Pages artifact
         env:
           PAGES_SITE_URL: ${{ vars.SITE_URL }}
           PAGES_BASE_PATH: ${{ vars.BASE_PATH }}
@@ -42,9 +40,8 @@ jobs:
           if [[ "${repo,,}" == "$owner.github.io" ]]; then base="/"; fi
           site="${PAGES_SITE_URL:-https://$owner.github.io}"
           base="${PAGES_BASE_PATH:-$base}"
-          docker compose run --rm -e SITE_URL="$site" -e BASE_PATH="$base" blog pnpm build
-          docker compose run --rm -e SITE_URL="$site" blog node scripts/check-dist.mjs dist "$base"
-      - name: Save browser evidence and dependency risk report
+          docker compose run --rm -e SITE_URL="$site" -e BASE_PATH="$base" blog pnpm verify:publish
+      - name: Save publication check evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -59,7 +56,7 @@ jobs:
 
 
   deploy:
-    if: github.event_name == 'workflow_dispatch' && inputs.publish && github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.publish))
     needs: verify
     runs-on: ubuntu-latest
     permissions:

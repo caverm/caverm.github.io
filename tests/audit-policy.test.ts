@@ -170,7 +170,37 @@ test("Zod risk boundary rejects removed early guards and added input paths", () 
 			},
 		},
 		{ ...safe, entryPoints: { ...safe.entryPoints, build: "" } },
+		{
+			...safe,
+			entryPoints: {
+				...safe.entryPoints,
+				build: safe.entryPoints.build.replace(
+					'"scripts/check-build-boundaries.mjs"',
+					'""',
+				),
+			},
+		},
 		{ ...safe, entryPoints: { ...safe.entryPoints, verify: "" } },
+		{
+			...safe,
+			entryPoints: {
+				...safe.entryPoints,
+				build: safe.entryPoints.build.replace(
+					"for (const args of [",
+					'for (const args of [["cms:check"],',
+				),
+			},
+		},
+		{
+			...safe,
+			entryPoints: {
+				...safe.entryPoints,
+				build: safe.entryPoints.build.replace(
+					'"exec",\n\t\t"node",',
+					'"cms:check",\n\t\t"node",',
+				),
+			},
+		},
 		{
 			...safe,
 			entryPoints: {

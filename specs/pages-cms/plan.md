@@ -35,7 +35,7 @@ CMS의 date 저장은 quoted 날짜 문자열일 수 있다. 현재 z.date를 �
 제안은 CMS 전용 bridge workflow를 추가하여 두 개의 명시적 action을 제공하는 것이다.
 
 1. **카테고리 선택지 갱신**: main에서 payload의 known source/action/repository/ref를 검증한다. Docker에서 생성·검사를 실행하고 변경 파일이 `.pages.yml`뿐인지 확인한 뒤 해당 파일만 커밋/일반 push한다. 동시 갱신은 직렬화하고 non-fast-forward를 강제 우회하지 않는다. 생성물 커밋 후 필요하면 기존 verify workflow를 publish=false로 명시적으로 요청한다.
-2. **검증 후 게시**: 확인 대화상자의 사용자 의도를 받아 main의 기존 verify.yml을 publish=true로 dispatch한다. 기존 full verify→artifact→main-only deploy 게이트를 재사용하며 content push만으로 게시하지 않는다.
+2. **검증 후 게시**: 확인 대화상자의 사용자 의도를 받아 main의 기존 verify.yml을 publish=true로 dispatch한다. 2026-10-25 PUB-02 정책에 따라 게시 준비 검사→artifact→main-only deploy를 재사용한다. main content push도 같은 준비 검사 성공 후 자동 게시하며, 전체 개발 검사는 별도 수동 full workflow에 유지한다. 갱신 action의 publish=false dispatch는 유지한다.
 
 권한은 job 단위로 나눈다. 생성물 갱신은 contents:write, workflow 요청은 actions:write가 필요하고 게시 권한 pages:write/id-token:write는 기존 deploy job에만 남긴다. payload는 runner 환경 변수로 펼치지 않는다. GITHUB_EVENT_PATH 파일 하나를 readonly mount하여 Docker CLI에서 읽으며 전체 JSON/triggeredBy 개인정보를 로그에 출력하지 않는다. 로컬에서는 합성 payload fixture와 workflow 구문/정책을 검증하고 실제 dispatch는 하지 않는다.
 

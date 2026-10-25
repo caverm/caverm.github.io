@@ -5,12 +5,12 @@
 | ID | 적용 대상과 기대 동작 | 검증 |
 | --- | --- | --- |
 | SEC-DATA-01 | 카테고리 ID는 안전한 고유 ASCII 값, 부모 그래프는 유효하고 모든 글은 정확히 한 유효 카테고리를 참조한다. 초안도 검증한다. | taxonomy 단위/실제 collection 빌드 |
-| SEC-PUB-01 | 초안은 직접 경로·모든 목록·인접 글·분류·태그·검색·RSS·sitemap에 포함되지 않는다. | 공개 필터 테스트, 모든 산출물 canary 검사, 직접 URL404·실제 Pagefind 음성 검사 |
+| SEC-PUB-01 | 초안은 직접 경로·모든 목록·인접 글·분류·태그·검색·RSS·sitemap에 포함되지 않는다. | 게시 준비: 실제 초안 slug 산출물 누출 검사. 수동 전체: 공개 필터·canary·직접 URL404·실제 Pagefind 음성 검사 |
 | SEC-SECRET-01 | 코드·예시·로그에 실제 비밀정보·개인정보를 추가하지 않는다. 예시는 합성임을 표시한다. | source secret pattern 검사와 변경 검토. 패턴 검사는 완전한 비밀 탐지를 보장하지 않는다. |
 | SEC-ASSET-01 | 신뢰된 작성자의 검토한 저장소 이미지만 받는다. CMS 업로드는 PNG/JPG/JPEG/WebP/GIF로 제한하고 SVG/AVIF는 제외한다. 기존 검토된 로컬 SVG는 유지한다. AVIF 확장·헤더는 source에서 거부한다. Sharp는 전 경로0.35.5다. | 생성 media 설정/단위 검사, dev 시작·생산 build·verify source 검사, audit 정책 lockfile 검사, pnpm why sharp. 실제 hosted 업로드는 연결 후 검사 |
 | SEC-HTML-01 | 카테고리·제목은 템플릿의 기본 escaping을 사용한다. 피드 HTML은 sanitize-html로 제한한다. untrusted raw HTML·MDX는 지원하지 않는다. | 템플릿 검토, feed 생성 검사. Markdown 작성자는 저장소 관리자 신뢰 경계다. |
 | SEC-ENV-01 | 모든 Node/pnpm 작업은 Linux Docker, 앱은 비루트, 개발 포트는 호스트 loopback만 공개한다. 의존성과 캐시는 named volume이다. | fresh-volume 설치의 id 확인, compose 설정·컨테이너 명령/접속 검사 |
-| SEC-DEP-01 | 고정 lockfile frozen 설치·의존성 감사를 실행한다. 새 advisory, 손상된 감사 응답, 알려진 완화 전제 위반은 실패시킨다. | audit.mjs와 생성된 dependency-audit JSON, 아래 개별 위험 기록 |
+| SEC-DEP-01 | 고정 lockfile frozen 설치를 유지한다. 수동 전체 개발 검사의 온라인 감사는 새 advisory·손상된 응답을 실패시킨다. 게시 빌드도 공유 오프라인 guard로 알려진 완화 전제 위반을 실패시킨다. | audit.mjs·build-boundaries.mjs, dependency-audit JSON, 아래 개별 위험 기록 |
 | SEC-CONTENT-02 | 신뢰된 정적 빌드의 글 태그는 최대64개다. 초과 배열은 Zod 원소 검사 전에 fatal 오류 하나로 거부한다. src/public의 코드·Markdown·JSON/YAML·스타일·텍스트는 파일별1MiB를 읽기 전에 검사하고 초과 시 check/dev/build/verify가 실패한다. 이미지는 이 텍스트 한도에서 제외한다. | 실제 공용 tagsSchema의63/64/65개·백만 길이 sparse 배열 getter0/오류1개, 실제 source preflight·대소문자·이미지 제외 회귀, 감사의 입력 경계 guard |
 | SEC-LOG-01 | 로그에는 고정 명령·종료 코드·시간·작업 ID만 추가하고 전체 환경·개인정보·본문을 덤프하지 않는다. 보관량과 접근을 제한한다. | 정상/실패 verify 로그·Compose logging 설정·README 운영 방법 |
 | SEC-CMS-01 | CMS action은 main의 실제 GitHub ref와 known source/action/repository/ref를 검증한다. triggeredBy는 권한 증명이 아니다. 게시 요청은 고정 verify.yml/publish=true를 사용한다. | 합성 action 허용/거부 단위 검사와 workflow 정책 검토. 실제 App/dispatch 권한은 연결 후 확인 |
@@ -18,6 +18,8 @@
 | SEC-CMS-03 | 선택지 갱신은 검증 후 생성 .pages.yml만 일반 push하고 verify를 publish=false로 명시 요청한다. 강제 push·보호 우회는 없다. 최소 job 권한과 기존 검증→게시 게이트를 유지한다. | workflow 검토, 로컬 생성/stale/graph 검사. 원격 branch 보호와 bot push는 연결 후 확인 |
 
 ## 의존성 검토 범위와 결과 해석
+
+2026-10-25 승인된 게시 정책은 온라인 감사와 전체 UI 회귀를 자동 게시 경로에서 분리한다. 자동 게시가 새 취약점 부재나 전체 개발 검사 통과를 보장하지는 않는다. source 보안·파일별1MiB 제한과 실제 tagsSchema 초과 배열 probe/정적 입력 경계는 공유 오프라인 검사로 build의 CMS/Astro 이전에 강제한다. 기존 전체 `pnpm verify` 및 별도 수동 full workflow의 감사 정책·실패 조건은 유지한다. 게시 산출물은 고정 예시 대신 실제 초안 slug의 직접 경로·피드·sitemap·색인 누출을 검사한다. 실제 검증 결과와 미실행 원격 범위는 작업 기록이 기준이다.
 
 가져온 lockfile의 원시 생산 의존성 감사는 low23/moderate106/high123/critical4를 보고했다. 호환 major 범위에서 Astro5.18.2·Svelte5.57.2 등과 전이 패치를 갱신하고 `sharp: 0.35.5`, `serialize-javascript: 7.0.5` override를 적용했다. 모든 Astro 경로도 실제 Sharp0.35.5를 사용하는 것은 컨테이너 `pnpm why sharp`로 확인했다. 버전 고정의 기준은 package.json·pnpm-lock.yaml이다.
 

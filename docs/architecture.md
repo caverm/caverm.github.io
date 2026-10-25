@@ -65,7 +65,9 @@ Astro devToolbar는 설정으로 비활성화한다. dev와 build가 content sto
 
 브라우저 검사는 Docker에 설치한 Playwright Chromium에서 실제 Pagefind 색인·카테고리 disclosure·Swup·뒤로가기·검색·목차·코드 복사·테마·모바일을 확인하고 스크린샷을 남긴다. 정적 검사에서는 HTML href/src/srcset, canonical·RSS alternate·robots·sitemap·피드 이미지와 초안 canary를 확인한다.
 
-GitHub CI도 Docker Compose에서 같은 verify를 실행하고 저장소별 origin/base로 실제 Pages artifact를 다시 빌드한다. 수동 workflow_dispatch 게시를 설정할 수 있으나 이 작업에서는 실행하지 않는다. 실제 저장소 설정·Git hook·브랜치 보호·배포 상태는 로컬 설정 파일의 존재로 확인되지 않는다.
+게시 준비 경로 `pnpm verify:publish`는 source preflight와 공유 오프라인 입력 경계 guard를 CMS/Astro보다 먼저 실행하고, CMS·카테고리/콘텐츠 검증과 실제 origin/base의 Astro·Pagefind 빌드 뒤 일반 정적 산출물을 검사한다. `static-output.mjs`는 canonical/RSS/sitemap/robots·로컬 링크/이미지를 검사하고 `draft-routes.mjs`는 기존 Astro frontmatter 파서·slugger로 실제 초안 경로를 얻어 누출을 거부한다. 고정 예시 글·이미지·canary 기능 검사는 기존 full 경로에 남긴다. 개인화한 콘텐츠가 예시 fixture와 다르다는 이유로 게시를 막지 않기 위한 정책 분리다.
+
+`verify.yml`은 PR 검사, main push 검사 후 자동 배포, 수동 main/publish=true 게시를 담당한다. CMS는 기존 workflow 이름과 publish 입력을 그대로 쓴다. 카테고리 갱신 bot은 publish=false dispatch를 유지한다. 별도 `full-verify.yml`은 workflow_dispatch만 지원하고 전체 pnpm verify를 실행하며 배포하지 않는다. 온라인 감사와 UI 회귀는 이 수동 개발 검사에 남으며 자동 게시의 필수 단계가 아니다. 실제 저장소 설정·Git hook·브랜치 보호·원격 배포 상태는 로컬 파일만으로 확인되지 않는다.
 
 ## 로그·운영
 

@@ -28,7 +28,7 @@
 | CMS-06 | 단일 기준과 갱신 | categoryId/parentId 선택지는 categories.json에서 결정적으로 생성한다. 생성된 설정의 수정/누락을 검출하는 check를 제공한다. 카테고리를 웹에서 저장한 뒤 명시적 갱신 action으로 CMS 선택지를 다시 만들 수 있는 준비된 workflow를 제공한다. |
 | CMS-07 | 구조화된 카테고리 편집 | CMS의 type=file/list=true JSON 필드로 id/name/parentId/order를 편집한다. 원본 JSON을 다른 기준 파일로 대체하지 않는다. 기존 중복/부모누락/순환/글참조 검증은 약화하지 않는다. |
 | CMS-08 | Markdown 이미지·코드 | rich-text는 Markdown 형식과 이미지 업로드를 제공한다. 코드 fence·링크·이미지가 포함된 합성 CMS 저장 형식 fixture를 실제 빌드에서 검증한다. 실제 hosted Editor/Source roundtrip은 저장소/인증이 생긴 뒤 별도 검사하며 로컬 fixture를 실서비스 검사로 보고하지 않는다. |
-| CMS-09 | 게시 의도 분리 | 글 저장은 즉시 Pages 게시를 실행하지 않는다. 별도 확인이 있는 CMS 게시 action이 main의 기존 검증/게시 workflow를 명시적으로 요청하며 검증 실패 시 게시하지 않는다. |
+| CMS-09 | 검증 후 게시 | 후속 승인된 personal-blog PUB-02에 따라 main에 저장된 변경은 게시 준비 검사 성공 후 자동 게시한다. CMS의 기존 publish=true/main dispatch도 호환한다. 카테고리 설정 갱신 bot push와 publish=false dispatch는 게시를 요청하지 않는다. 실제 배포는 검증이 성공한 main에서만 가능하다. |
 | CMS-10 | action 경계와 로그 | CMS payload는 source/action/repository/ref를 검증하고 전체 payload나 사용자 개인정보를 로그로 출력하지 않는다. 갱신 workflow는 생성된 `.pages.yml`만 커밋 대상으로 삼고 다른 변경이나 동시 main 변경을 강제로 덮어쓰지 않는다. |
 | DEV-01 | 개발 도구 막대 숨김 | Astro 설정에서 devToolbar.enabled=false를 사용하고 실제 Docker 개발 페이지에서 toolbar 요소가 나타나지 않는 것을 확인한다. 테마의 내비게이션·배너는 변경하지 않는다. |
 | QA-CMS-01 | 검증과 정직한 완료 보고 | 설정 생성·stale 검출·깊은 분류/동명 라벨·날짜 경계·action payload 경계를 Docker에서 검증한다. 기존 verify를 통과시키고 기존 알려진 audit 위험을 그대로 보고한다. 실제 hosted 연결/CRUD/원격 action은 미실행 범위로 분리한다. |

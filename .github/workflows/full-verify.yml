@@ -1,0 +1,31 @@
+name: Full development verification
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: full-verify-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  full-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Match nonroot container user to the Linux bind workspace owner
+        run: |
+          echo "BLOG_UID=$(id -u)" >> "$GITHUB_ENV"
+          echo "BLOG_GID=$(id -g)" >> "$GITHUB_ENV"
+      - name: Build Linux tool image
+        run: docker compose build
+      - name: Install frozen dependencies as nonroot user
+        run: docker compose run --rm blog pnpm install --frozen-lockfile
+      - name: Run the complete development checks
+        run: docker compose run --rm blog pnpm verify
+      - name: Save browser evidence and dependency risk report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-verification-evidence
+          path: artifacts/
+          retention-days: 7

@@ -2,6 +2,20 @@
 
 기준 요구사항은 spec.md, 구현 방법은 plan.md를 참조한다. 2026-10-23 시작.
 
+## 후속 정책 변경: 게시 준비 검사와 수동 전체 검사 (2026-10-25)
+
+- [x] P01: 사용자 승인 범위와 기존 workflow/build/CMS/산출물 검사를 읽고 PUB-02/CMS-09 계약·계획을 갱신한다.
+- [x] P02: Astra 설계 gate 뒤 게시 준비 진입점·공통 정적 검사·main 자동 배포/별도 수동 full workflow를 구현한다.
+- [x] P03: 실제 Docker 게시 준비 빌드와 focused 오류·분기 검증을 수행하고 문서·개발 서버를 마무리한다.
+
+구현·검증: 기존 `pnpm verify`와 기본 check-dist의 기능 fixture·전체 테스트를 보존했다. 새 `verify:publish`는 소스 사전 검사·공유 오프라인 Zod/JSX/의존성 전제 guard를 먼저 실행하고 CMS/콘텐츠·실제 origin/base Astro/Pagefind 빌드 뒤 일반 산출물을 확인한다. verify.yml의 이름과 CMS publish 입력을 유지하며 main push 자동 배포/PR 검사/수동 main+publish 선택으로 분기하고, full-verify.yml은 수동 전체 검사만 수행한다. 초안은 기존 Astro 파서/slugger로 실제 경로를 구하며 고정 글·사진 파일명·예시 개수를 요구하지 않는다.
+
+2026-10-25 Docker `SITE_URL=https://caverm.github.io BASE_PATH=/ pnpm verify:publish` **exit0**, job `82fb8545-a54d-48e3-b538-dd4401fa7516`,38.690초/일반 로컬 참조2763개(`artifacts/publish-verify.log`). 첫 시도는 빌드 전에 변경 파일 formatter의 unused import/control-character 정규식 지적으로 중단했고 해당 두 항목만 수정했다. 실제 게시 빌드는 한 번만 실행했다. 최종 focused 검사7개는 **PASS**(`artifacts/publish-boundaries.log`): 예시 콘텐츠 없는 일반 산출물·개인화 이미지/query, 깨진 이미지/링크·index 없는 디렉터리·RSS 이미지 거부, 명시 slug/중첩 index/잘못된 frontmatter, 실제 초안 직접 경로/피드/sitemap/색인 누출 거부 및 draft a와 공개 a/b 구분, 오프라인 guard 제거·후순위 이동 거부, workflow YAML/배포 분기/CMS 호환, runner exit7/동일 작업 ID·UTC·실패 종료 이벤트. 소유한 파일만 formatter 적용했고 사용자 콘텐츠·프로필·배너는 변경하지 않았다. 전체 브라우저/세 base/full verify·온라인 감사·원격 Actions/배포는 이번 정책 수정에서 재실행하지 않았다. 기존 원시 감사 잔여 위험15건은 해소됐다고 보고하지 않는다.
+
+최종 검토·복원: Astra **APPROVED**, root도 실제 게시 실행의 passed 종료 이벤트를 확인했다. 초기 `publish-focused.log`는6/6이며 최종 `publish-boundaries.log`는 runner 실패 회귀를 포함한7/7 전체 focused 결과다(두 실행 개수를 합산하지 않는다). Docker 개발 서버를 복원했고 로그에서 Astro ready2277ms와 watching을 확인했다. 기존 loopback `http://127.0.0.1:4321/`로 준비됐으며 추가 브라우저 probe는 실행하지 않았다.
+
+시작 상태: 동적 이미지 URL 브라우저 수정은 보존하며 개인화 경로/query/srcset/동일 URL의 Docker 임시 fixture는 exit0으로 끝났다. 전체 verify는 재실행하지 않았다. 당시 개발 서버는 중지 상태였으며 사용자 소개·프로필·배너·콘텐츠는 변경하지 않는다. Docker 일반 조회는 pipe permission denied였지만 승인된 승격 실행은 정상이다. 새로운 의존성을 설치하지 않고 Astro가 이미 사용하는 parseFrontmatter/github-slugger를 재사용한다. 기존 CMS-09의 수동 게시 전용 정책은 이번 명시 승인으로 대체되며 과거 실패·검증 기록은 보존한다. Git 명령·커밋·push·원격 workflow 실행은 하지 않는다.
+
 ## 후속 수정: 개인화한 소개 본문의 브라우저 검사 (2026-10-25)
 
 개발 서버는 Up/`127.0.0.1:4321→4321`이며 Astro5.18.2 ready(2776ms)·파일 감시 시작을 확인했다.

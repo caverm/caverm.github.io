@@ -256,10 +256,26 @@ async function checkLowerLinkScrolling(page, origin, base) {
 			await link.scrollIntoViewIfNeeded();
 			const start = await page.evaluate(() => window.scrollY);
 			assert(start > 1, "the real tag/category link is clicked below the top");
+			const renderedImages = await page.evaluate(() =>
+				["main img", "#sidebar img"].map((selector) => {
+					const image = document.querySelector(selector);
+					const source = image?.currentSrc || image?.getAttribute("src") || "";
+					if (!source.trim()) return "";
+					try {
+						const url = new URL(source, document.baseURI);
+						return ["http:", "https:"].includes(url.protocol) ? url.href : "";
+					} catch {
+						return "";
+					}
+				}),
+			);
+			assert(
+				renderedImages.every(Boolean),
+				"Cover and profile must have rendered HTTP(S) image sources",
+			);
+			const imageUrls = new Set(renderedImages);
 			await navigateWithoutPageMotion(page, link, destination);
-			const imageUrl = `${origin}${base}images/notes.svg`;
-			const avatarUrl = `${origin}${base}images/avatar.svg`;
-			const imagePattern = /\/images\/(?:notes|avatar)\.svg$/;
+			const imagePattern = (url) => imageUrls.has(url.href);
 			let releaseImage;
 			const imageGate = new Promise((resolve) => {
 				releaseImage = resolve;
@@ -272,10 +288,17 @@ async function checkLowerLinkScrolling(page, origin, base) {
 			const devtools = await page.context().newCDPSession(page);
 			await devtools.send("Network.clearBrowserCache");
 			await devtools.detach();
-			const requestedImages = Promise.all([
-				page.waitForRequest(imageUrl, { timeout: 5000 }),
-				page.waitForRequest(avatarUrl, { timeout: 5000 }),
-			]);
+			const requestedImages = Promise.all(
+				[...imageUrls].map((url) =>
+					page.waitForRequest((request) => request.url() === url, {
+						timeout: 5000,
+					}),
+				),
+			).catch(() => {
+				throw new Error(
+					"Rendered image request was not observed during history restoration",
+				);
+			});
 			const returning = page.goBack({ waitUntil: "networkidle" });
 			try {
 				await requestedImages;

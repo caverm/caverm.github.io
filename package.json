@@ -15,6 +15,7 @@
 		"lint": "biome check ./src ./tests ./scripts astro.config.mjs package.json biome.json frontmatter.json postcss.config.mjs svelte.config.js tailwind.config.cjs",
 		"preinstall": "node scripts/require-docker.mjs",
 		"verify": "node scripts/verify.mjs",
+		"verify:publish": "node scripts/verify-publish.mjs",
 		"test:unit": "node --experimental-strip-types --test tests/*.test.ts",
 		"test:browser": "node scripts/browser-check.mjs",
 		"security": "node scripts/security.mjs && node --experimental-strip-types scripts/audit.mjs",

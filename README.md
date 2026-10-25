@@ -93,7 +93,7 @@ lang: ko
 4. 본문은 Editor와 Source로 편집합니다. 일반 Markdown 이미지·링크·코드 fence를 사용할 수 있습니다. 코드 title/강조 지시문 등 확장 문법은 Source를 사용하고 저장 전후 GitHub diff를 확인합니다. 실제 서비스의 Editor/Source 왕복 보존은 아직 검증하지 않았습니다. 복잡한 글은 원문을 보관한 뒤 작은 수정으로 먼저 확인합니다.
 5. 이미지는 media의 **글 이미지**에 PNG/JPG/JPEG/WebP/GIF를 올립니다. 저장은 `public/images/`, Markdown 주소는 `/images/...`이며 Pages base는 빌드가 붙입니다. CMS에서는 SVG/AVIF 업로드를 받지 않습니다. 기존 검토된 SVG 예시는 계속 렌더링할 수 있습니다. 업로드하는 사람도 코드 작성자와 같은 신뢰 수준이어야 합니다.
 6. **카테고리 관리**에서 안정적인 ID·표시명·부모·정렬값을 편집합니다. 최상위는 부모 없음으로, 정렬 순서는 숫자(기본 0)로 둡니다. 저장 후 **카테고리 선택지 갱신**을 실행하고 Actions 성공을 확인한 뒤 CMS를 다시 엽니다. 전체 조상 경로가 선택 라벨에 표시됩니다. 새 부모를 추가할 때는 먼저 저장·갱신한 뒤 자식의 부모로 선택합니다. 자기 자신/자손 부모·중복/없는 ID·기존 글의 끊어진 참조는 빌드가 거부합니다.
-7. 공개 준비가 끝나면 초안을 해제하고 저장합니다. 저장과 push는 검증만 실행합니다. **검증 후 게시**를 명시적으로 확인해야 main의 전체 사이트 검증과 Pages 게시를 요청합니다. CMS 갱신 action도 게시하지 않습니다. 실제 완료 상태와 environment URL은 GitHub Actions에서 확인합니다.
+7. 공개 준비가 끝나면 초안을 해제하고 저장합니다. `main` push는 게시 준비 검사를 통과하면 자동 게시합니다. **검증 후 게시** action은 기존 `verify.yml`의 `publish=true` 수동 요청으로도 사용할 수 있습니다. 카테고리 선택지 갱신 action은 `publish=false` 요청을 유지하며 자체 게시를 요청하지 않습니다. 실제 완료 상태와 environment URL은 GitHub Actions에서 확인합니다.
 
 카테고리의 유일한 기준은 `src/data/categories.json`입니다. `.pages.yml`의 선택지는 직접 수정하지 않습니다. 로컬에서 분류를 바꾼 경우 아래 명령으로 갱신합니다. `cms:check`와 모든 build/verify는 오래되거나 임의 변경한 설정을 거부합니다.
 
@@ -111,7 +111,7 @@ docker compose run --rm blog pnpm cms:check
 - [ ] 이미지 업로드와 root/project base 주소, 코드·링크·이미지의 Editor/Source 저장 왕복 확인
 - [ ] 분류 추가·부모 이동·동명 분류 선택과 저장→갱신→다시 열기 확인
 - [ ] 분류 배열 항목 삭제·재정렬 및 tags 배열 축소 후 원본 JSON/frontmatter에 정확히 반영되는지 확인 (merge 동작의 실제 hosted 버전 확인)
-- [ ] 잘못된 그래프/오래된 설정의 검증 실패와 일반 저장의 미게시 확인
+- [ ] 잘못된 그래프/오래된 설정의 검증 실패와 main 저장 후 게시 준비 검사·자동 게시 확인
 - [ ] 명시적 게시 action의 검증→Pages 게시 및 실제 공개 URL 확인
 
 Astro 개발 도구 막대는 `astro.config.mjs`의 `devToolbar.enabled: false`로 숨깁니다. 개발 서버와 build/verify는 `.astro`를 공유하므로 동시에 실행하지 않습니다.
@@ -124,7 +124,11 @@ Astro 개발 도구 막대는 `astro.config.mjs`의 `devToolbar.enabled: false`�
 
 페이지·카테고리·글·페이지번호 이동은 본문 fade/slide나 순차 등장 없이 교체합니다. 아래쪽 태그·카테고리 같은 내부 링크를 누르면 목적지 응답을 준비한 뒤 기존 화면이 부드럽게 위로 올라가고 상단에서 내용을 교체합니다. 이미 상단이거나 모션 줄이기 설정이면 즉시 이동하며 history 위치 복원과 목차 hash에는 별도 상향 애니메이션을 넣지 않습니다. 메뉴·분류 펼침·호버·복사·테마 피드백은 유지합니다. 브라우저 검사는 지연 응답·교체 첫 프레임과 실제 하단 링크의 중간 스크롤 좌표, reduced-motion·연속 탐색·키보드·목차·현재 분류를 함께 확인합니다.
 
-GitHub Actions는 Docker Compose에서 같은 검증을 실행하고 저장소 이름에 맞는 base로 `dist/`를 다시 빌드해 Pages artifact를 업로드합니다. 수동 실행에서 게시를 선택하면 검증 완료 산출물을 deploy-pages로 게시할 수 있습니다. 현재 작업에서는 게시 job을 실행하지 않았습니다. 저장소 생성·push·브랜치 보호·필수 상태 검사·Pages 설정·배포는 수행하지 않았습니다. 초기 작업 당시에는 Git 저장소가 없었습니다. 현재 사용자가 로컬 Git 저장소와 GitHub 원격을 설정했고 CI 실행도 확인했습니다. 이번 수정에서는 커밋·push·원격 CI 재실행·배포를 수행하지 않습니다. CI 파일 존재를 서버의 보호 설정 적용으로 간주하지 않습니다.
+자동 게시 경로는 Docker의 `pnpm verify:publish`입니다. ① 기존 소스 크기·보안 검사와 오프라인 입력 경계 guard ② CMS 선택지·카테고리·전체 콘텐츠 검증 및 실제 origin/base의 Astro·Pagefind 빌드 ③ 일반 canonical·RSS·sitemap·로컬 링크/이미지·실제 초안 경로 누출 검사를 수행합니다. 예시 글·프로필 파일명·브라우저 UI fixture는 게시 조건에 넣지 않습니다. 기존 전체 `pnpm verify`와 모든 테스트는 유지하며 **Actions → Full development verification**에서 수동 실행합니다. 온라인 의존성 감사·타입/lint/단위·세 base·브라우저 회귀는 이 전체 개발 검사에 포함됩니다. 코드·의존성 변경 때 전체 검사를 권장합니다.
+
+`verify.yml`은 PR에서는 검사만, `main` push에서는 검사 성공 후 자동 배포합니다. 수동 실행은 `publish=false`가 기본이며 `main`에서 true를 선택한 경우에만 배포합니다. CMS의 기존 게시 요청과 호환됩니다. 이번 수정에서는 Git 명령·커밋·push·원격 CI 실행·배포를 수행하지 않습니다. CI 파일 존재를 서버의 Pages·브랜치 보호·필수 상태 검사 설정 적용으로 간주하지 않습니다.
+
+정책 분리 후 로컬 게시 준비 검사는 실제 root base에서 exit0(38.690초·참조2,763개), 관련 회귀7개 PASS였습니다. 이번 변경에서 전체 개발 검사를 반복 실행하지 않았으며 원격 배포는 미실행입니다. 이전 전체 검사 결과와 이번 실행은 [작업 기록](specs/personal-blog/tasks.md)에서 구분합니다.
 
 첫 프레임 검사는 교체 영역의 CSS 가시성을 확인합니다. 기존 클라이언트 전용 아카이브는 모듈을 처음 불러올 때 글 목록 렌더가 늦을 수 있으며, 실제 본문이 항상 교체 첫 프레임에 표시된다는 보장은 확인하지 못했습니다. 관찰 근거와 범위는 [작업 기록](specs/personal-blog/tasks.md)을 참조하세요.
 
@@ -136,6 +140,8 @@ GitHub Actions는 Docker Compose에서 같은 검증을 실행하고 저장소 �
 docker compose logs --tail 100 blog
 docker compose logs --follow blog
 docker compose run --rm blog pnpm verify 2>&1 | Tee-Object -FilePath verify.log
+
+docker compose run --rm -e SITE_URL=https://example.github.io -e BASE_PATH=/ blog pnpm verify:publish
 docker compose ps
 ```
 
@@ -151,7 +157,7 @@ Compose 서비스 로그는 10 MB × 3개로 순환하며 로컬 Docker 접근 �
 1. 개인화한 소스를 GitHub 저장소의 `main` 브랜치에 올립니다. 이 작업에서는 저장소 생성·commit·push를 실행하지 않았습니다.
 2. 저장소 **Settings → Pages → Build and deployment → Source**에서 **GitHub Actions**를 선택합니다. 실제 서버 설정은 저장소 관리자 권한으로 수행합니다.
 3. 기본 주소는 `https://<owner>.github.io/<repository>/`입니다. 저장소 이름이 `<owner>.github.io`면 base는 `/`입니다. workflow가 이 값을 계산합니다. 사용자 도메인 등을 쓸 때는 **Settings → Secrets and variables → Actions → Variables**에 `SITE_URL`(경로 없는 HTTPS origin), `BASE_PATH`(앞뒤 `/`)를 설정합니다. custom domain은 Pages 설정과 DNS도 별도로 맞추고 필요하면 `public/CNAME`에 도메인 한 줄을 둡니다.
-4. **Actions → Container verification and Pages artifact → Run workflow**에서 `main`을 선택하고 **검증 후 GitHub Pages에 게시**를 켜 실행합니다. 검증 실패 시 deploy job은 실행되지 않습니다. 기본 수동 옵션은 게시 꺼짐이며 push/PR은 검증과 artifact 업로드만 합니다.
+4. `main`에 push하면 게시 준비 검사 성공 후 자동 배포합니다. 별도 수동 게시도 **Actions → Container verification and Pages artifact → Run workflow**의 `main`에서 **검증 후 GitHub Pages에 게시**를 켜 실행할 수 있습니다. 검사 실패 시 deploy job은 실행되지 않습니다. 기본 수동 옵션은 게시 꺼짐이며 PR은 검사만 합니다. 전체 개발 검사는 별도 **Full development verification**에서 실행하며 배포하지 않습니다.
 5. 첫 게시에서 GitHub가 `github-pages` environment 승인을 요구하면 해당 환경 정책에 따라 승인합니다. 완료된 deploy job의 environment URL이 실제 게시 주소입니다. 정적 artifact만 배포하며 source/docs/초안 원문을 Pages에 복사하지 않습니다.
 
 Linux 로컬에서도 소유권이 다른 bind 폴더를 쓰면 Docker 빌드 전에 `BLOG_UID`, `BLOG_GID`를 실제 작업자 값으로 지정합니다. CI는 `id -u`, `id -g`를 이미지 빌드 인자로 전달해 앱을 해당 비루트 사용자로 실행합니다. 호스트 source의 소유자를 재귀 변경하지 않습니다.

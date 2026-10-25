@@ -2,6 +2,12 @@
 
 상태: 상세 설계 검토 후 확정하고 구현한 계획. 2026-10-23.
 
+## 후속 정책 변경: main 자동 게시와 수동 개발 검사 (2026-10-25)
+
+사용자가 전체 브라우저/개발 검사를 자동 게시 조건에서 분리하고 main push의 검증 성공 후 자동 배포를 명시 승인했다. 기존 Docker·전체 verify·테스트 파일과 CMS의 verify.yml/publish 호출은 유지한다. verify.yml은 source 입력과 공유 오프라인 보안 경계→기존 CMS/카테고리 및 실제 site/base Astro·Pagefind 빌드→일반 정적 canonical/링크/이미지/RSS/sitemap/실제 draft 제외의 게시 준비 경로를 사용한다. 고정 글·예시 이름·fixture 개수를 요구하는 검사는 기존 full 경로에만 둔다. 실제 draft는 설치된 Astro의 기존 frontmatter 파서와 같은 slug 규칙으로 읽어 별도 공개 manifest 없이 확인한다. 온라인 감사 대신 기존 Zod/JSX/이미지 전제 guard는 빌드 전에 오프라인으로 강제한다.
+
+main push는 준비 검사 성공 후 deploy하고 PR은 검사만 한다. 수동 verify.yml은 publish=false 기본값이며 true/main일 때만 deploy한다. 전체 pnpm verify는 별도 full-verify.yml의 workflow_dispatch로 실행하며 게시 job을 두지 않는다. CMS category refresh의 bot push 후 명시 publish=false 검사는 기존대로 설정 검증만 한다. focused 검증은 새 게시 준비 실제 빌드, 일반 산출물의 깨진 링크/이미지·실제 초안 누출 거부, workflow YAML/배포 분기와 수동 full/CMS 호환성을 다루며 전체 개발 검사를 불필요하게 반복하지 않는다. Git·원격 실행/배포는 수행하지 않는다.
+
 ## 후속 수정: GitHub verify 의존성 감사 실패 (2026-10-24)
 
 재현 근거는 GitHub run40056990383/job120762039360의 source-security 단계이며 `artifacts/ci-failure-40056990383.log`에 보존한다. lint·CMS·타입·단위·소스 검사 뒤 신규 Zod/serialize-javascript advisory2건으로 exit1이다. Git 설정이나 페이지 배포의 실패가 아니다. 로컬 HEAD f84739b와 원격 실행 commit76af7ee는 다르므로 reset·원격 변경 없이 현재 소스에 최소 수정한다.
