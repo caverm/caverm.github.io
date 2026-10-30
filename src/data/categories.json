@@ -33,5 +33,10 @@
     "name": "표준",
     "parentId": "security",
     "order": 1
+  },
+  {
+    "id": "cyber-incident",
+    "name": "사이버보안동향",
+    "order": 2
   }
 ]
