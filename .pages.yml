@@ -149,6 +149,10 @@
               {
                 "name": "webhacking-kr",
                 "label": "보안 / 웹해킹 / webhacking.kr"
+              },
+              {
+                "name": "cyber-incident",
+                "label": "사이버보안동향"
               }
             ],
             "multiple": false
@@ -262,6 +266,10 @@
               {
                 "name": "webhacking-kr",
                 "label": "보안 / 웹해킹 / webhacking.kr"
+              },
+              {
+                "name": "cyber-incident",
+                "label": "사이버보안동향"
               }
             ],
             "multiple": false
