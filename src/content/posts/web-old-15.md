@@ -39,7 +39,7 @@ javascript의 alert 로 인해 페이지 소스 코드 보기가 어렵기 때�
 
 이후 정상적으로 페이지 접속이 가능하며 소스 코드 또한 확인할 수 있습니다. 
 
-```
+```html
 <html>
 <head>
 <title>Challenge 15</title>
