@@ -38,5 +38,17 @@
     "id": "cyber-incident",
     "name": "사이버보안동향",
     "order": 2
+  },
+  {
+    "id": "local-standard",
+    "name": "국내표준",
+    "parentId": "standard",
+    "order": 0
+  },
+  {
+    "id": "global-standard",
+    "name": "국제표준",
+    "parentId": "standard",
+    "order": 1
   }
 ]
