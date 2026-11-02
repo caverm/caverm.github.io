@@ -139,6 +139,14 @@
                 "label": "보안 / 표준"
               },
               {
+                "name": "local-standard",
+                "label": "보안 / 표준 / 국내표준"
+              },
+              {
+                "name": "global-standard",
+                "label": "보안 / 표준 / 국제표준"
+              },
+              {
                 "name": "web-hacking",
                 "label": "보안 / 웹해킹"
               },
@@ -254,6 +262,14 @@
               {
                 "name": "standard",
                 "label": "보안 / 표준"
+              },
+              {
+                "name": "local-standard",
+                "label": "보안 / 표준 / 국내표준"
+              },
+              {
+                "name": "global-standard",
+                "label": "보안 / 표준 / 국제표준"
               },
               {
                 "name": "web-hacking",
