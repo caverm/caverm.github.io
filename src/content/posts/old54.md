@@ -39,7 +39,7 @@ lang: ko
 
 이를 해결하기 위해 += 연산자를 사용해 덮어쓰지 않고 누적해 flag를 찍고자 한다.
 
-```
+```javascript
 <!-- 수정 전 -->
 function run(){
   if(window.ActiveXObject){
@@ -79,7 +79,7 @@ setTimeout("answer(0)",1000);
 
 개발자 도구(F12) 에서 콘솔창을 열어(ESC) 함수를 오버라이딩 한 결과는 아래 사진과 같다.
 
-```
+```javascript
 <!-- 수정 후 -->
 function answer(i){
   x.open('GET','?m='+i,false);
