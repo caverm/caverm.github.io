@@ -1,5 +1,5 @@
 ---
-title: sql basic knowledge
+title: "[SQLI] sql basic knowledge"
 slug: sql-basic-knowledge
 published: 2026-11-03
 draft: false
@@ -144,7 +144,7 @@ AND EXTRACTVALUE(1, CONCAT(0x3a, (SELECT database())))
 | **공백 (Space)** | 주석(`/**/`), 탭(`%09`), 개행(`%0a`), 괄호(`()`) 활용 | `SELECT/**/table_name/**/FROM...` 또는 `SELECT(table_name)FROM...` |
 | **따옴표 (**`'`**,** `"`**)** | 문자열을 16진수(`0x...`) 또는 `CHAR()` 함수로 변환 | `WHERE table_name = 0x61646d696e` (`'admin'`과 동일) |
 | **등호 (**`=`**)** | `LIKE`, `IN()`, `INSTR()`, 부등호(`<`, `>`), `BETWEEN` | `WHERE id LIKE 'admin'` 또는 `ASCII(...) IN (97)` |
-| `AND` **/** `OR` | 기호 연산자 `&&` (URL 인코딩: `%26%26`), ` |  | ` 사용 | `1=1 %26%26 2=2` |
+| `AND` **/** `OR` | 기호 연산자 `&&` (URL 인코딩: `%26%26`), ` |  |
 | **콤마 (**`,`**)** | `LIMIT 0, 1` -> `OFFSET` 활용 / `SUBSTR(str, 1, 1)` -> `FROM FOR` 활용 | `LIMIT 1 OFFSET 0` / `SUBSTR(pw FROM 1 FOR 1)` |
 | **키워드 대소문자** | 대소문자 혼용 또는 이중 삽입(치환 필터링일 때) | `SeLeCt`, `selselectect` |
 
