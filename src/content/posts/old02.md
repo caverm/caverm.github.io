@@ -107,7 +107,7 @@ time 값을 조종해 blind sqli 가 가능한지 테스트하기 위해 쿼리�
 
 이를 통해 `time` 쿠키에서 발생하는 SQL Injection을 이용해 서버 응답에 반영되는 정수 값을 기반으로 데이터베이스 정보를 추론할 수 있음을 확인하였다.
 
-```python 
+```python
 import requests
 import re
 
@@ -232,8 +232,10 @@ for i in range(table_number):
             print("\n")
 ```
 
- 
 
 
+위 코드를 돌려 정답을 확인해보자.
 
-&nbsp;
+![](/images/wehacking-kr/old-02/mw8t2ezi-4ptd5ipv.png)
+
+이 값을 admin.php 페이지의 form 에 입력하면 문제를 해결할 수 있다.
