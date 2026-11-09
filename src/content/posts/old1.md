@@ -1,5 +1,5 @@
 ---
-title: "[webhacking.kr] old-1"
+title: "[webhacking.kr] old-01"
 slug: old-1
 published: 2026-11-01
 draft: false
