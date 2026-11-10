@@ -117,5 +117,16 @@
         overflow-x: auto;
         margin: 1em 0;
     }
+
+    /* 표의 한글은 가능한 한 띄어쓰기 단위로 줄바꿈 */
+    table th,
+    table td {
+        word-break: keep-all;
+    }
     
+    /* 첫 번째 열의 항목명은 한 줄로 표시 */
+    table th:first-child,
+    table td:first-child {
+        white-space: nowrap;
+    }
 }
