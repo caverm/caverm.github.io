@@ -124,7 +124,7 @@ def total_time(sample_html):
 def set_cookies(sql):
     
     my_cookies = { 
-    "PHPSESSID" : "2bpgjcg8phg1koupjcobn32cbc",
+    "PHPSESSID" : "YOUR_SESSION_ID",
     "time" : sql
     }   
     return my_cookies
