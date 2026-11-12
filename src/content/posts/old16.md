@@ -63,6 +63,8 @@ function kk(x,y){
 
 따라서 별을 움직이는 `100`, `97`, `119`, `115` 조건은 전부 건너뛰고, `cd` 값이 `124`가 되도록 이벤트를 발생시키거나 해당 경로로 바로 이동하면 문제를 해결할 수 있다.
 
+![](/images/wehacking-kr/old16/mwctj07m-efkhttg4.png)
+
 ## 3. 문제 풀이
 
 `cd == 124` 조건이 참이 되면 `location.href = String.fromCharCode(124) + ".php"`가 실행되어 새로운 페이지로 리다이렉트된다. 여기서 `String.fromCharCode()`는 아스키코드 숫자를 문자로 변환해 주는 자바스크립트 내장 함수다.
